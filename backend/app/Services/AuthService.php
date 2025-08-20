@@ -40,4 +40,22 @@ class AuthService {
         $user->currentAccessToken()->delete();
     }
 
+    // Proses Register user generate username
+    public function register($data)
+    {
+        // Generate username dari nama
+        $username = $this->userRepository->generateUsername($data['name']);
+
+        $userData = [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => $data['role'] ?? 'satpam', // Default role user
+            'username' => $username,
+            'password' => Hash::make($data['password']),
+            'photo' => $data['photo'] ?? null,
+        ];
+
+        return $this->userRepository->create($userData);
+    }
+
 }

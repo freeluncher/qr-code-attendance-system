@@ -57,4 +57,29 @@ class AuthController extends Controller
         ]);
     }
 
+    // Register Endpoint
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string|in:admin,satpam',
+            'photo' => 'nullable|string',
+        ]);
+
+        $user = $this->authService->register($data);
+
+        return response()->json([
+            'message' => 'Registrasi berhasil.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'username' => $user->username,
+            ],
+        ], 201);
+    }
+
 }
