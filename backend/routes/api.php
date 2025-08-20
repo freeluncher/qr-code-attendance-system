@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\AttendanceController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -32,5 +33,9 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
 
     // QrCode CRUD
     Route::resource('/qrcodes', QrCodeController::class)->except(['create', 'edit']);
+
+    // Attendance (Presensi/Absensi)
+    Route::resource('/attendances', AttendanceController::class)->except(['create', 'edit', 'update', 'destroy']);
+    // Jika ingin satpam bisa presensi, bisa buka akses POST attendances untuk role satpam di group middleware lain.
 
 });
