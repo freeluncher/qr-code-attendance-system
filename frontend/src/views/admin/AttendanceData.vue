@@ -246,14 +246,14 @@
           <div class="flex-1 flex justify-between sm:hidden">
             <button
               @click="previousPage"
-              :disabled="pagination.current_page === 1"
+              :disabled="!pagination || pagination.current_page === 1"
               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
             >
               Previous
             </button>
             <button
               @click="nextPage"
-              :disabled="pagination.current_page === pagination.last_page"
+              :disabled="!pagination || pagination.current_page === pagination.last_page"
               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
             >
               Next
