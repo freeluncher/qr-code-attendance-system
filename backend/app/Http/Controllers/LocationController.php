@@ -46,6 +46,7 @@ class LocationController extends Controller
             'address' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'status' => 'required|in:aktif,nonaktif',
         ]);
 
         // Auto-fill coordinates if not provided
@@ -91,6 +92,7 @@ class LocationController extends Controller
             'address' => 'sometimes|required|string|max:255',
             'latitude' => 'sometimes|nullable|numeric',
             'longitude' => 'sometimes|nullable|numeric',
+            'status' => 'sometimes|required|in:aktif,nonaktif',
         ]);
 
         // Auto-fill coordinates if address changed but coordinates not provided
