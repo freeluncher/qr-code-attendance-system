@@ -171,7 +171,7 @@ const handleLogin = async () => {
 
     // Prepare credentials for API
     const credentials = {
-      email: form.identifier, // Backend expects 'email' field
+      login: form.identifier, // Backend expects 'login' field
       password: form.password,
       remember: form.remember
     }
