@@ -21,6 +21,6 @@ class ShiftFactory extends Factory
             ['name' => 'Siang', 'start_time' => '14:00:00', 'end_time' => '22:00:00'],
             ['name' => 'Malam', 'start_time' => '22:00:00', 'end_time' => '06:00:00'],
         ];
-        return $this->faker->randomElement($shifts);
+        return $shifts;
     }
 }

@@ -245,7 +245,7 @@
     </main>
 
     <!-- Create QR Code Modal -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg max-w-md w-full p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-medium text-gray-900">Generate QR Code Baru</h3>
@@ -286,14 +286,20 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Durasi Aktif</label>
             <select
-              v-model="createForm.duration_days"
+              v-model="createForm.expires_in_hours"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
             >
-              <option value="7">7 Hari</option>
-              <option value="14">14 Hari</option>
-              <option value="30">30 Hari</option>
-              <option value="90">90 Hari</option>
+              <option value="1">1 Jam</option>
+              <option value="2">2 Jam</option>
+              <option value="4">4 Jam</option>
+              <option value="6">6 Jam</option>
+              <option value="8">8 Jam</option>
+              <option value="12">12 Jam</option>
+              <option value="24">24 Jam (1 Hari)</option>
+              <option value="48">48 Jam (2 Hari)</option>
+              <option value="72">72 Jam (3 Hari)</option>
+              <option value="168">168 Jam (7 Hari)</option>
             </select>
           </div>
 
@@ -438,7 +444,7 @@ const qrCodeToDelete = ref(null)
 const createForm = ref({
   location_id: '',
   shift_id: '',
-  duration_days: '30'
+  expires_in_hours: '24'
 })
 
 // Computed
@@ -542,7 +548,7 @@ const closeCreateModal = () => {
   createForm.value = {
     location_id: '',
     shift_id: '',
-    duration_days: '30'
+    expires_in_hours: '24'
   }
 }
 
@@ -555,11 +561,9 @@ const generateQrCode = async () => {
       shift_id: createForm.value.shift_id
     }
 
-    // Convert duration_days to expires_at if provided
-    if (createForm.value.duration_days) {
-      const now = new Date()
-      const expiresAt = new Date(now.getTime() + (parseInt(createForm.value.duration_days) * 24 * 60 * 60 * 1000))
-      qrCodeData.expires_at = expiresAt.toISOString()
+    // Add expires_in_hours if provided
+    if (createForm.value.expires_in_hours) {
+      qrCodeData.expires_in_hours = parseInt(createForm.value.expires_in_hours)
     }
 
     await qrCodeAPI.createQrCode(qrCodeData)
@@ -616,7 +620,8 @@ const copyQrCode = async (qrCode) => {
 
 const renewQrCode = async (qrCode) => {
   try {
-    await qrCodeAPI.renewQrCode(qrCode.id, { duration_days: 30 })
+    // Renew for 24 hours (1 day) by default
+    await qrCodeAPI.renewQrCode(qrCode.id, { expires_in_hours: 24 })
     await loadQrCodes()
   } catch (error) {
     console.error('Error renewing QR code:', error)

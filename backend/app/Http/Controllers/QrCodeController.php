@@ -39,7 +39,15 @@ class QrCodeController extends Controller
         $data = $request->validate([
             'location_id' => 'required|exists:locations,id',
             'shift_id' => 'required|exists:shifts,id',
+            'expires_in_hours' => 'sometimes|integer|min:1|max:168', // Max 7 days
         ]);
+
+        // Set expires_at based on hours input (default 24 hours)
+        $hoursToExpire = $data['expires_in_hours'] ?? 24;
+        $data['expires_at'] = now()->addHours($hoursToExpire);
+
+        // Remove expires_in_hours from data since it's not a model field
+        unset($data['expires_in_hours']);
 
         $qrcode = $this->qrCodeService->generateQrCode($data);
 
@@ -75,10 +83,17 @@ class QrCodeController extends Controller
     {
         $data = $request->validate([
             'duration_days' => 'sometimes|integer|min:1|max:365',
+            'expires_in_hours' => 'sometimes|integer|min:1|max:8760', // Max 365 days
         ]);
 
-        $durationDays = $data['duration_days'] ?? 30; // Default 30 days
-        $newExpiresAt = now()->addDays($durationDays);
+        if (isset($data['expires_in_hours'])) {
+            // Use hours for more precise control
+            $newExpiresAt = now()->addHours($data['expires_in_hours']);
+        } else {
+            // Default to days for backward compatibility
+            $durationDays = $data['duration_days'] ?? 30; // Default 30 days
+            $newExpiresAt = now()->addDays($durationDays);
+        }
 
         $qrcode = $this->qrCodeService->updateQrCode($id, [
             'expires_at' => $newExpiresAt

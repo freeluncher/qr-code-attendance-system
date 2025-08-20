@@ -47,7 +47,7 @@ class QrCodeService{
         // Generate UUID untuk code yang unik
         $data['code'] = Str::uuid();
 
-        // Set expires_at dari input, atau default 24 jam dari sekarang
+        // Set expires_at jika belum ada (expires_at sudah diberikan dari controller)
         if (!isset($data['expires_at'])) {
             $data['expires_at'] = now()->addHours(24);
         }
