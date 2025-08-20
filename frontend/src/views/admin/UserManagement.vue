@@ -167,7 +167,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="pagination.total > pagination.per_page" class="mt-6 flex justify-center">
+      <div v-if="pagination && pagination.total > pagination.per_page" class="mt-6 flex justify-center">
         <nav class="flex space-x-2">
           <button
             v-for="page in paginationPages"
