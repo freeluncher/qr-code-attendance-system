@@ -8,7 +8,7 @@
           <div class="flex items-center">
             <div class="flex items-center">
               <AcademicCapIcon class="h-8 w-8 text-indigo-600 mr-3" />
-              <div>
+              <div class="hidden sm:block">
                 <h1 class="text-xl font-semibold text-gray-900">QR Attendance System</h1>
                 <p class="text-sm text-gray-500">Dashboard Admin</p>
               </div>
@@ -16,15 +16,15 @@
           </div>
 
           <!-- User Menu -->
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2 sm:space-x-4">
             <BellIcon class="h-6 w-6 text-gray-400 hover:text-gray-600 cursor-pointer" />
-            <div class="flex items-center space-x-3">
-              <div class="text-right">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+              <div class="text-right hidden sm:block">
                 <p class="text-sm font-medium text-gray-900">{{ authStore.user?.name }}</p>
                 <p class="text-xs text-gray-500">Administrator</p>
               </div>
-              <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center">
-                <UserIcon class="h-6 w-6 text-white" />
+              <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-indigo-600 flex items-center justify-center">
+                <UserIcon class="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <button @click="handleLogout" class="text-gray-400 hover:text-gray-600">
                 <ArrowRightOnRectangleIcon class="h-5 w-5" />
@@ -36,7 +36,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <!-- Stats Overview -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Users -->
@@ -113,23 +113,23 @@
         <!-- Attendance Line Chart -->
         <div class="lg:col-span-2 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Statistik Kehadiran 7 Hari Terakhir</h3>
-            <div class="flex space-x-2">
+            <h3 class="text-base sm:text-lg font-medium text-gray-900">Statistik Kehadiran</h3>
+            <div class="flex space-x-1 sm:space-x-2">
               <button
                 @click="changeChartPeriod(7)"
-                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 7 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+                :class="['px-2 py-1 text-xs sm:px-3 sm:text-sm rounded-md', chartPeriod === 7 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
                 7 Hari
               </button>
               <button
                 @click="changeChartPeriod(14)"
-                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 14 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+                :class="['px-2 py-1 text-xs sm:px-3 sm:text-sm rounded-md', chartPeriod === 14 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
                 14 Hari
               </button>
               <button
                 @click="changeChartPeriod(30)"
-                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 30 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+                :class="['px-2 py-1 text-xs sm:px-3 sm:text-sm rounded-md', chartPeriod === 30 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
                 30 Hari
               </button>
@@ -151,7 +151,7 @@
 
         <!-- Attendance Distribution Donut Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Distribusi Kehadiran Hari Ini</h3>
+          <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">Distribusi Hari Ini</h3>
 
           <!-- Loading State -->
           <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
@@ -183,7 +183,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <!-- Weekly Bar Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Perbandingan Kehadiran per Hari</h3>
+          <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">Perbandingan Harian</h3>
 
           <!-- Loading State -->
           <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
@@ -201,7 +201,7 @@
 
         <!-- Top Late Employees -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Satpam Paling Sering Terlambat</h3>
+          <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">Top Terlambat</h3>
 
           <!-- Loading State -->
           <div v-if="loading" class="flex justify-center py-4">
@@ -243,8 +243,8 @@
         <!-- Recent Activities -->
         <div class="lg:col-span-2 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Aktivitas Terbaru</h3>
-            <button class="text-sm text-indigo-600 hover:text-indigo-500">Lihat Semua</button>
+            <h3 class="text-base sm:text-lg font-medium text-gray-900">Aktivitas Terbaru</h3>
+            <button class="text-sm text-indigo-600 hover:text-indigo-500 hidden sm:block">Lihat Semua</button>
           </div>
 
           <!-- Loading State -->
@@ -288,7 +288,7 @@
 
         <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Aksi Cepat</h3>
+          <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">Aksi Cepat</h3>
           <div class="space-y-3">
             <router-link
               to="/admin/users"
@@ -337,10 +337,10 @@
       <div class="mt-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-sm p-6 text-white">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-medium">Prediksi AI - Satpam Berisiko Terlambat</h3>
-            <p class="text-purple-100 text-sm">Berdasarkan analisis 7 hari terakhir</p>
+            <h3 class="text-base sm:text-lg font-medium">Prediksi AI - Berisiko Terlambat</h3>
+            <p class="text-purple-100 text-xs sm:text-sm">Berdasarkan analisis 7 hari terakhir</p>
           </div>
-          <CpuChipIcon class="h-8 w-8 text-purple-200" />
+          <CpuChipIcon class="h-6 w-6 sm:h-8 sm:w-8 text-purple-200" />
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div v-for="(prediction, index) in aiPredictions" :key="index" class="bg-white bg-opacity-20 rounded-lg p-4">
