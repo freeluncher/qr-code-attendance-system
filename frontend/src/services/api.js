@@ -31,9 +31,13 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Instead of hard redirect, let the error propagate so components can handle it
+      // window.location.href = '/login'
     }
-    return Promise.reject(error.response?.data || error.message)
+
+    // Return error data in a consistent format
+    const errorData = error.response?.data || { error: error.message || 'Unknown error' }
+    return Promise.reject(errorData)
   }
 )
 

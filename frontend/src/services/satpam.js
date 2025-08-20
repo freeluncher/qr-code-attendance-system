@@ -6,46 +6,39 @@ import api from './api'
 class SatpamAPI {
   // Dashboard
   async getDashboardStats() {
-    const response = await api.get('/satpam/stats')
-    return response.data
+    return await api.get('/satpam/stats')
   }
 
   async getTodayAttendance() {
-    const response = await api.get('/satpam/today-attendance')
-    return response.data
+    return await api.get('/satpam/today-attendance')
   }
 
   async getMonthlyStats() {
-    const response = await api.get('/satpam/monthly-stats')
-    return response.data
+    return await api.get('/satpam/monthly-stats')
   }
 
   async getTodaySchedule() {
-    const response = await api.get('/satpam/today-schedule')
-    return response.data
+    return await api.get('/satpam/today-schedule')
   }
 
   async getRecentActivities(limit = 5) {
-    const response = await api.get('/satpam/recent-activities', {
+    return await api.get('/satpam/recent-activities', {
       params: { limit }
     })
-    return response.data
   }
 
   // QR Code Attendance
   async processQrAttendance(qrCode, latitude = null, longitude = null) {
-    const response = await api.post('/satpam/qr-attendance', {
+    return await api.post('/satpam/qr-attendance', {
       qr_code: qrCode,
       latitude,
       longitude
     })
-    return response.data
   }
 
   // History
   async getAttendanceHistory(params = {}) {
-    const response = await api.get('/satpam/attendance-history', { params })
-    return response.data
+    return await api.get('/satpam/attendance-history', { params })
   }
 
   // Schedule
@@ -54,8 +47,7 @@ class SatpamAPI {
     if (month) params.month = month
     if (year) params.year = year
 
-    const response = await api.get('/satpam/schedule', { params })
-    return response.data
+    return await api.get('/satpam/schedule', { params })
   }
 
   // Location services

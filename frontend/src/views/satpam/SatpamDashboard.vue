@@ -409,6 +409,22 @@ const loadData = async () => {
       satpamAPI.getRecentActivities(7)
     ])
 
+    console.log('Stats Data:', statsData)
+    console.log('Activities Data:', activitiesData)
+
+    // Check if statsData has the expected structure or error
+    if (!statsData || statsData.error) {
+      throw new Error(statsData?.error || 'Invalid stats data structure')
+    }
+    if (!activitiesData || activitiesData.error) {
+      throw new Error(activitiesData?.error || 'Invalid activities data structure')
+    }
+
+    // Check if statsData has the required properties
+    if (!statsData.today) {
+      throw new Error('Stats data missing required properties')
+    }
+
     // Update today stats
     todayStats.value = {
       attendance: statsData.today.has_attendance ? 1 : 0,
@@ -428,39 +444,30 @@ const loadData = async () => {
         date: activity.date || formatDate(new Date()),
         location: activity.location || 'Pos Utama',
         checkIn: activity.time || '-',
-        checkOut: '-', // Check out functionality not implemented yet
-        status: activity.type === 'check_in' ? 'Hadir' : 'Check-out',
-        statusClass: 'bg-green-100 text-green-800',
-        statusBg: 'bg-green-100',
-        iconColor: 'text-green-600'
+        // ...existing code...
       }))
     } else {
       recentAttendance.value = []
     }
-
-    // Mock current shift and location (could come from API)
-    currentShift.value = {
-      name: 'Shift Pagi',
-      start_time: '08:00',
-      end_time: '16:00',
-      notes: 'Shift normal hari kerja'
-    }
-
-    currentLocation.value = {
-      name: 'Pos Utama',
-      address: 'Gedung A, Lantai 1'
-    }
-
   } catch (error) {
     console.error('Error loading satpam data:', error)
-    // Fallback to default data
+    
+    // If it's an authentication error, redirect to login
+    if (error.error === 'User not authenticated' || error.message?.includes('authenticated')) {
+      router.push('/login')
+      return
+    }
+    
+    // Otherwise, set fallback data
     todayStats.value = { attendance: 0, totalShifts: 1 }
     monthStats.value = { percentage: 0, onTime: 0 }
     recentAttendance.value = []
   } finally {
     loading.value = false
   }
-}// Timer for clock
+}
+
+// Timer for clock
 let timeInterval = null
 
 onMounted(() => {

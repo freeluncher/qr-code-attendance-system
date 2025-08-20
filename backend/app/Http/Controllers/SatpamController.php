@@ -19,12 +19,20 @@ class SatpamController extends Controller
     public function getDashboardStats()
     {
         $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'User not authenticated'
+            ], 401);
+        }
+
         $today = Carbon::today();
         $thisMonth = Carbon::now()->startOfMonth();
 
         // Today's attendance
         $todayAttendance = Attendance::where('user_id', $user->id)
             ->whereDate('scanned_at', $today)
+            ->with('location')
             ->first();
 
         // This month statistics
@@ -138,6 +146,13 @@ class SatpamController extends Controller
     public function getRecentActivities(Request $request)
     {
         $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'User not authenticated'
+            ], 401);
+        }
+
         $limit = $request->get('limit', 10);
 
         $attendances = Attendance::where('user_id', $user->id)
