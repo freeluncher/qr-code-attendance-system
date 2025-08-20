@@ -72,4 +72,10 @@ class LocationController extends Controller
             'location' => $location,
         ]);
     }
+
+    public function destroy($id)
+    {
+        $this->locationService->deleteLocation($id);
+        return response()->json(['message' => 'Location deleted successfully']);
+    }
 }
