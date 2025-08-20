@@ -417,28 +417,34 @@ const loadData = async () => {
 
     // Update month stats
     monthStats.value = {
-      percentage: statsData.this_month.on_time_rate,
-      onTime: statsData.this_month.on_time_count
+      percentage: statsData.this_month.on_time_rate || 0,
+      onTime: statsData.this_month.on_time_count || 0
     }
 
     // Format attendance data for display
-    recentAttendance.value = attendanceData.map(attendance => ({
-      id: attendance.id,
-      date: attendance.formatted_date,
-      location: attendance.location,
-      checkIn: attendance.scanned_at || '-',
-      checkOut: '-', // Check out functionality not implemented yet
-      status: attendance.status_label,
-      statusClass: attendance.status === 'tepat_waktu'
-        ? 'bg-green-100 text-green-800'
-        : 'bg-red-100 text-red-800',
-      statusBg: attendance.status === 'tepat_waktu'
-        ? 'bg-green-100'
-        : 'bg-red-100',
-      iconColor: attendance.status === 'tepat_waktu'
-        ? 'text-green-600'
-        : 'text-red-600'
-    }))    // Mock current shift and location (could come from API)
+    if (attendanceData && attendanceData.length > 0) {
+      recentAttendance.value = attendanceData.map(attendance => ({
+        id: attendance.id,
+        date: attendance.formatted_date || attendance.date,
+        location: attendance.location || 'Pos Utama',
+        checkIn: attendance.scanned_at || attendance.check_in || '-',
+        checkOut: '-', // Check out functionality not implemented yet
+        status: attendance.status_label || attendance.status || 'Hadir',
+        statusClass: attendance.status === 'tepat_waktu' || attendance.status === 'present'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800',
+        statusBg: attendance.status === 'tepat_waktu' || attendance.status === 'present'
+          ? 'bg-green-100'
+          : 'bg-red-100',
+        iconColor: attendance.status === 'tepat_waktu' || attendance.status === 'present'
+          ? 'text-green-600'
+          : 'text-red-600'
+      }))
+    } else {
+      recentAttendance.value = []
+    }
+
+    // Mock current shift and location (could come from API)
     currentShift.value = {
       name: 'Shift Pagi',
       start_time: '08:00',
