@@ -459,7 +459,7 @@ const saveLocation = async () => {
       // Create location
       await api.post('/locations', formData.value)
     }
-    
+
     closeModal()
     await loadLocations()
   } catch (error) {

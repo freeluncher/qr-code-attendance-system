@@ -59,7 +59,7 @@ const router = createRouter({
     {
       path: '/admin/users',
       name: 'admin-users',
-      component: () => import('../views/admin/UsersView.vue'),
+      component: () => import('../views/admin/UserManagement.vue'),
       meta: {
         requiresAuth: true,
         requiresRole: 'admin',
@@ -69,7 +69,7 @@ const router = createRouter({
     {
       path: '/admin/locations',
       name: 'admin-locations',
-      component: () => import('../views/admin/AdminLocations.vue'),
+      component: () => import('../views/admin/LocationManagement.vue'),
       meta: {
         requiresAuth: true,
         requiresRole: 'admin',
@@ -79,7 +79,7 @@ const router = createRouter({
     {
       path: '/admin/qrcodes',
       name: 'admin-qrcodes',
-      component: () => import('../views/admin/AdminQrCodes.vue'),
+      component: () => import('../views/admin/QrCodeManagement.vue'),
       meta: {
         requiresAuth: true,
         requiresRole: 'admin',
@@ -89,7 +89,7 @@ const router = createRouter({
     {
       path: '/admin/attendances',
       name: 'admin-attendances',
-      component: () => import('../views/admin/AdminAttendances.vue'),
+      component: () => import('../views/admin/AttendanceData.vue'),
       meta: {
         requiresAuth: true,
         requiresRole: 'admin',
@@ -99,7 +99,7 @@ const router = createRouter({
     {
       path: '/admin/reports',
       name: 'admin-reports',
-      component: () => import('../views/admin/AdminReports.vue'),
+      component: () => import('../views/admin/ReportsView.vue'),
       meta: {
         requiresAuth: true,
         requiresRole: 'admin',

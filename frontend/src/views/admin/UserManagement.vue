@@ -461,7 +461,7 @@ const saveUser = async () => {
       // Create user
       await api.post('/users', formData.value)
     }
-    
+
     closeModal()
     await loadUsers(pagination.value.current_page)
   } catch (error) {
