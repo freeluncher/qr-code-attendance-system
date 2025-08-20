@@ -1,9 +1,9 @@
 <template>
   <div class="w-full h-64">
-    <Line 
+    <Line
       v-if="chartData.datasets && chartData.datasets.length > 0"
-      :data="chartData" 
-      :options="chartOptions" 
+      :data="chartData"
+      :options="chartOptions"
       class="max-h-64"
     />
     <div v-else class="h-full bg-gray-50 rounded-lg flex items-center justify-center">
@@ -167,7 +167,7 @@ const chartOptions = computed(() => ({
             label += ': '
           }
           label += context.parsed.y
-          
+
           // Add percentage for on-time rate
           if (context.datasetIndex === 1) { // On-time dataset
             const dataPoint = props.data[context.dataIndex]
@@ -175,7 +175,7 @@ const chartOptions = computed(() => ({
               label += ` (${dataPoint.on_time_percentage}%)`
             }
           }
-          
+
           return label
         }
       }

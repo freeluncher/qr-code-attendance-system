@@ -115,19 +115,19 @@
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900">Statistik Kehadiran 7 Hari Terakhir</h3>
             <div class="flex space-x-2">
-              <button 
+              <button
                 @click="changeChartPeriod(7)"
                 :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 7 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
                 7 Hari
               </button>
-              <button 
+              <button
                 @click="changeChartPeriod(14)"
                 :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 14 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
                 14 Hari
               </button>
-              <button 
+              <button
                 @click="changeChartPeriod(30)"
                 :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 30 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
               >
@@ -135,16 +135,16 @@
               </button>
             </div>
           </div>
-          
+
           <!-- Loading State -->
           <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
 
           <!-- Line Chart -->
-          <AttendanceLineChart 
+          <AttendanceLineChart
             v-else
-            :data="chartData" 
+            :data="chartData"
             :title="`Trend Kehadiran ${chartPeriod} Hari Terakhir`"
           />
         </div>
@@ -152,16 +152,16 @@
         <!-- Attendance Distribution Donut Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Distribusi Kehadiran Hari Ini</h3>
-          
+
           <!-- Loading State -->
           <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
             <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
 
           <!-- Donut Chart -->
-          <AttendanceDonutChart 
+          <AttendanceDonutChart
             v-else
-            :data="stats.today" 
+            :data="stats.today"
             title="Kehadiran Hari Ini"
           />
 
@@ -184,16 +184,16 @@
         <!-- Weekly Bar Chart -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Perbandingan Kehadiran per Hari</h3>
-          
+
           <!-- Loading State -->
           <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
             <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           </div>
 
           <!-- Bar Chart -->
-          <AttendanceBarChart 
+          <AttendanceBarChart
             v-else
-            :data="chartData" 
+            :data="chartData"
             title="Kehadiran Harian"
             type="daily"
           />
@@ -473,21 +473,21 @@ const loadDashboardData = async () => {
 const changeChartPeriod = async (days) => {
   chartPeriod.value = days
   loading.value = true
-  
+
   try {
     // Reload chart data and late employees with new period
     const [lateEmployees, chartDataResult] = await Promise.all([
       dashboardAPI.getTopLateEmployees(days, 5),
       dashboardAPI.getAttendanceChartData(days)
     ])
-    
+
     topLateEmployees.value = lateEmployees.map(emp => ({
       name: emp.name,
       location: emp.location,
       lateCount: emp.late_count
     }))
     chartData.value = chartDataResult
-    
+
   } catch (error) {
     console.error('Error loading chart data:', error)
   } finally {

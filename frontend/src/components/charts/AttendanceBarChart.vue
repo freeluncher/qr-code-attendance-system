@@ -1,9 +1,9 @@
 <template>
   <div class="w-full h-64">
-    <Bar 
+    <Bar
       v-if="chartData.datasets && chartData.datasets.length > 0"
-      :data="chartData" 
-      :options="chartOptions" 
+      :data="chartData"
+      :options="chartOptions"
       class="max-h-64"
     />
     <div v-else class="h-full bg-gray-50 rounded-lg flex items-center justify-center">
