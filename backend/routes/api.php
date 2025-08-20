@@ -9,6 +9,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SatpamController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -57,5 +58,24 @@ Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
     Route::prefix('dashboard')->group(function () {
         Route::get('/my-stats', [DashboardController::class, 'satpamStats']);
         Route::get('/my-history', [DashboardController::class, 'satpamHistory']);
+    });
+
+    // Satpam specific routes
+    Route::prefix('satpam')->group(function () {
+        // Dashboard
+        Route::get('/stats', [SatpamController::class, 'getDashboardStats']);
+        Route::get('/today-attendance', [SatpamController::class, 'getTodayAttendance']);
+        Route::get('/monthly-stats', [SatpamController::class, 'getMonthlyStats']);
+        Route::get('/today-schedule', [SatpamController::class, 'getTodaySchedule']);
+        Route::get('/recent-activities', [SatpamController::class, 'getRecentActivities']);
+        
+        // Attendance/QR Scanning
+        Route::post('/qr-attendance', [SatpamController::class, 'processQrAttendance']);
+        
+        // History
+        Route::get('/attendance-history', [SatpamController::class, 'getAttendanceHistory']);
+        
+        // Schedule
+        Route::get('/schedule', [SatpamController::class, 'getSchedule']);
     });
 });
