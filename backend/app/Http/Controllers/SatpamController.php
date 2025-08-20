@@ -190,14 +190,14 @@ class SatpamController extends Controller
 
         // Verify QR code
         $qrCode = QrCode::where('code', $request->qr_code)
-            ->where('is_active', true)
+            ->where('expires_at', '>', now())
             ->with('location')
             ->first();
 
         if (!$qrCode) {
             return response()->json([
                 'success' => false,
-                'message' => 'QR Code tidak valid atau sudah tidak aktif'
+                'message' => 'QR Code tidak valid atau sudah expired'
             ], 400);
         }
 
@@ -219,11 +219,12 @@ class SatpamController extends Controller
         $attendance = Attendance::create([
             'user_id' => $user->id,
             'location_id' => $qrCode->location_id,
+            'shift_id' => $qrCode->shift_id,
             'qr_code_id' => $qrCode->id,
             'scanned_at' => $now,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'status' => 'present' // or calculate based on time if needed
+            'status' => 'on_time' // default status, could be calculated based on time
         ]);
 
         return response()->json([
