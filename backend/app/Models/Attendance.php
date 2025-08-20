@@ -14,16 +14,20 @@ class Attendance extends Model
         'shift_id',
         'qr_code_id',
         'scanned_at',
+        'check_out_time',
         'status',
         'late_category',
         'photo_url',
         'latitude',
         'longitude',
+        'check_out_latitude',
+        'check_out_longitude',
         'distance',
     ];
 
     protected $casts = [
         'scanned_at' => 'datetime',
+        'check_out_time' => 'datetime',
     ];
 
     // Relation

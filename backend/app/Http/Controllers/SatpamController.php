@@ -48,7 +48,7 @@ class SatpamController extends Controller
             'today' => [
                 'has_attendance' => !!$todayAttendance,
                 'check_in' => $todayAttendance?->scanned_at?->format('H:i'),
-                'check_out' => null, // Not supported in current schema
+                'check_out' => $todayAttendance?->check_out_time?->format('H:i'),
                 'location' => $todayAttendance?->location?->name,
                 'status' => $todayAttendance?->status ?? 'not_checked_in'
             ],
@@ -85,7 +85,7 @@ class SatpamController extends Controller
 
         return response()->json([
             'check_in' => $attendance->scanned_at ? $attendance->scanned_at->format('H:i') : null,
-            'check_out' => null, // Not supported in current schema
+            'check_out' => $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : null,
             'location' => $attendance->location?->name,
             'status' => $this->getAttendanceStatus($attendance)
         ]);
@@ -207,12 +207,36 @@ class SatpamController extends Controller
         $now = Carbon::now();
 
         if ($existingAttendance) {
-            // If already checked in, this could be a check-out
-            // But for now, we'll prevent duplicate attendance
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan presensi hari ini'
-            ], 400);
+            // If already checked in and no check_out time, this is a check-out
+            if (!$existingAttendance->check_out_time) {
+                $existingAttendance->update([
+                    'check_out_time' => $now,
+                    'check_out_latitude' => $request->latitude,
+                    'check_out_longitude' => $request->longitude,
+                ]);
+
+                // Calculate work duration
+                $checkInTime = Carbon::parse($existingAttendance->scanned_at);
+                $checkOutTime = Carbon::parse($now);
+                $workDuration = $checkOutTime->diff($checkInTime);
+                $workDurationFormatted = $workDuration->format('%H:%I');
+
+                return response()->json([
+                    'success' => true,
+                    'type' => 'check_out',
+                    'message' => 'Check-out berhasil',
+                    'time' => $now->format('H:i'),
+                    'location' => $qrCode->location->name,
+                    'status' => $existingAttendance->status,
+                    'work_duration' => $workDurationFormatted
+                ]);
+            } else {
+                // Already checked in and out
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan check-in dan check-out hari ini'
+                ], 400);
+            }
         }
 
         // Determine attendance status based on shift time
@@ -235,6 +259,7 @@ class SatpamController extends Controller
 
         return response()->json([
             'success' => true,
+            'type' => 'check_in',
             'message' => 'Check-in berhasil',
             'time' => $now->format('H:i'),
             'location' => $qrCode->location->name,
