@@ -21,8 +21,8 @@ class ReportFactory extends Factory
         $end = now()->endOfWeek();
         return [
             'location_id' => Location::inRandomOrder()->first()->id ?? Location::factory(),
-            'start_time' => $start,
-            'end_time' => $end,
+            'week_start' => $start,
+            'week_end' => $end,
             'file_url' => $this->faker->url(),
         ];
     }

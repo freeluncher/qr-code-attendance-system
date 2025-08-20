@@ -3,6 +3,10 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\User;
+use App\Models\Location;
+use App\Models\Shift;
+use App\Models\QrCode;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Attendance>

@@ -27,7 +27,7 @@ class UserFactory extends Factory
         $role = $this->faker->randomElement(['admin', 'satpam']);
         return [
             'name' => $role === 'admin' ? 'Admin' . $this->faker->firstName : 'Pak Satpam' . $this->faker->firstName,
-            'email' => $role === 'admin' ? $this->faker->unique()->safeEmail() : null,
+            'email' => $this->faker->unique()->safeEmail(),
             'username' => $role === 'admin' ? 'admin' . Str::random(4) : 'satpam' . $this->faker->unique()->numerify('###'),
             'email_verified_at' => now(),
             'password' => Hash::make('password'), // Use a default password for testing

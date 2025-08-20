@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             ShiftSeeder::class,
             QrCodeSeeder::class,
             AttendanceSeeder::class,
-            AttendanceAuditSeeder::class,,
+            AttendanceAuditSeeder::class,
             NotificationSeeder::class,
             ReportSeeder::class,
             AiPredictionSeeder::class,
