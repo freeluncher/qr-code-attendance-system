@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\QrCodeController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -28,4 +29,8 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
 
     //Shift CRUD
     Route::resource('/shifts', ShiftController::class)->except(['create', 'edit']);
+
+    // QrCode CRUD
+    Route::resource('/qrcodes', QrCodeController::class)->except(['create', 'edit']);
+
 });
