@@ -159,7 +159,7 @@
               ]">
                 {{ day.date }}
               </div>
-              
+
               <!-- Shift Indicator -->
               <div v-if="day.shift" class="mt-1">
                 <div :class="[
@@ -437,21 +437,21 @@ const scheduleStats = computed(() => {
 const calendarDays = computed(() => {
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
-  
+
   const firstDay = new Date(year, month, 1)
   const startDate = new Date(firstDay)
   startDate.setDate(startDate.getDate() - firstDay.getDay())
-  
+
   const days = []
   const today = new Date()
-  
+
   for (let i = 0; i < 42; i++) {
     const date = new Date(startDate)
     date.setDate(startDate.getDate() + i)
-    
+
     const dateString = date.toISOString().split('T')[0]
     const schedule = schedules.value.find(s => s.date === dateString)
-    
+
     days.push({
       date: date.getDate(),
       fullDate: date.toLocaleDateString('id-ID'),
@@ -468,7 +468,7 @@ const calendarDays = computed(() => {
       } : null
     })
   }
-  
+
   return days
 })
 
@@ -547,10 +547,10 @@ const loadScheduleData = async () => {
   try {
     const month = currentDate.value.getMonth() + 1
     const year = currentDate.value.getFullYear()
-    
+
     const data = await satpamAPI.getSchedule(month, year)
     schedules.value = data || []
-    
+
   } catch (error) {
     console.error('Error loading schedule:', error)
     // Keep mock data for demo

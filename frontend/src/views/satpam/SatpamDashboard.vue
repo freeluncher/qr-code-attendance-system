@@ -275,7 +275,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import dashboardAPI from '../../services/dashboard'
+import satpamAPI from '../../services/satpam'
 import {
   ShieldCheckIcon,
   UserIcon,
@@ -404,9 +404,9 @@ const loadData = async () => {
   loading.value = true
   try {
     // Load satpam dashboard data using proper API endpoints
-    const [statsData, attendanceData] = await Promise.all([
-      dashboardAPI.getSatpamStats(),
-      dashboardAPI.getSatpamHistory(7)
+    const [statsData, activitiesData] = await Promise.all([
+      satpamAPI.getDashboardStats(),
+      satpamAPI.getRecentActivities(7)
     ])
 
     // Update today stats
@@ -422,23 +422,17 @@ const loadData = async () => {
     }
 
     // Format attendance data for display
-    if (attendanceData && attendanceData.length > 0) {
-      recentAttendance.value = attendanceData.map(attendance => ({
-        id: attendance.id,
-        date: attendance.formatted_date || attendance.date,
-        location: attendance.location || 'Pos Utama',
-        checkIn: attendance.scanned_at || attendance.check_in || '-',
+    if (activitiesData && activitiesData.length > 0) {
+      recentAttendance.value = activitiesData.map(activity => ({
+        id: activity.id || Math.random(),
+        date: activity.date || formatDate(new Date()),
+        location: activity.location || 'Pos Utama',
+        checkIn: activity.time || '-',
         checkOut: '-', // Check out functionality not implemented yet
-        status: attendance.status_label || attendance.status || 'Hadir',
-        statusClass: attendance.status === 'tepat_waktu' || attendance.status === 'present'
-          ? 'bg-green-100 text-green-800'
-          : 'bg-red-100 text-red-800',
-        statusBg: attendance.status === 'tepat_waktu' || attendance.status === 'present'
-          ? 'bg-green-100'
-          : 'bg-red-100',
-        iconColor: attendance.status === 'tepat_waktu' || attendance.status === 'present'
-          ? 'text-green-600'
-          : 'text-red-600'
+        status: activity.type === 'check_in' ? 'Hadir' : 'Check-out',
+        statusClass: 'bg-green-100 text-green-800',
+        statusBg: 'bg-green-100',
+        iconColor: 'text-green-600'
       }))
     } else {
       recentAttendance.value = []

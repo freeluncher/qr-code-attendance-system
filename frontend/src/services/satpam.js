@@ -53,7 +53,7 @@ class SatpamAPI {
     const params = {}
     if (month) params.month = month
     if (year) params.year = year
-    
+
     const response = await api.get('/satpam/schedule', { params })
     return response.data
   }

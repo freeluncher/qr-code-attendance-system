@@ -68,13 +68,13 @@ Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
         Route::get('/monthly-stats', [SatpamController::class, 'getMonthlyStats']);
         Route::get('/today-schedule', [SatpamController::class, 'getTodaySchedule']);
         Route::get('/recent-activities', [SatpamController::class, 'getRecentActivities']);
-        
+
         // Attendance/QR Scanning
         Route::post('/qr-attendance', [SatpamController::class, 'processQrAttendance']);
-        
+
         // History
         Route::get('/attendance-history', [SatpamController::class, 'getAttendanceHistory']);
-        
+
         // Schedule
         Route::get('/schedule', [SatpamController::class, 'getSchedule']);
     });

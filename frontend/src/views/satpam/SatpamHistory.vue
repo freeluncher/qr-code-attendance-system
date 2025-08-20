@@ -167,7 +167,7 @@
               <h3 class="text-lg font-medium text-gray-900">Data Presensi</h3>
               <p class="text-sm text-gray-500">{{ filteredAttendance.length }} dari {{ attendance.length }} record</p>
             </div>
-            
+
             <!-- View Mode Toggle -->
             <div class="bg-gray-100 rounded-lg p-1 flex">
               <button
@@ -337,7 +337,7 @@
                 Selanjutnya
               </button>
             </div>
-            
+
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700">
@@ -350,7 +350,7 @@
                   hasil
                 </p>
               </div>
-              
+
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                   <button
@@ -360,21 +360,21 @@
                   >
                     <ChevronLeftIcon class="h-5 w-5" />
                   </button>
-                  
+
                   <button
                     v-for="page in visiblePages"
                     :key="page"
                     @click="goToPage(page)"
                     :class="[
                       'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                      page === currentPage 
+                      page === currentPage
                         ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
                         : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                     ]"
                   >
                     {{ page }}
                   </button>
-                  
+
                   <button
                     @click="nextPage"
                     :disabled="currentPage === totalPages"
@@ -551,7 +551,7 @@ const stats = computed(() => {
   const presentCount = attendance.value.filter(a => a.status !== 'tidak_hadir').length
   const onTimeCount = attendance.value.filter(a => a.status === 'tepat_waktu').length
   const lateCount = attendance.value.filter(a => a.status === 'terlambat').length
-  
+
   let totalHours = 0
   attendance.value.forEach(record => {
     if (record.duration) {
@@ -560,7 +560,7 @@ const stats = computed(() => {
       totalHours += (hours ? parseInt(hours[1]) : 0) + (minutes ? parseInt(minutes[1]) / 60 : 0)
     }
   })
-  
+
   return {
     totalDays,
     totalPresent: presentCount,
@@ -573,19 +573,19 @@ const stats = computed(() => {
 
 const filteredAttendance = computed(() => {
   let filtered = [...attendance.value]
-  
+
   if (filters.value.startDate) {
     filtered = filtered.filter(a => a.date >= filters.value.startDate)
   }
-  
+
   if (filters.value.endDate) {
     filtered = filtered.filter(a => a.date <= filters.value.endDate)
   }
-  
+
   if (filters.value.status) {
     filtered = filtered.filter(a => a.status === filters.value.status)
   }
-  
+
   if (filters.value.location) {
     const locationMap = {
       'pos_utama': 'Pos Utama',
@@ -594,7 +594,7 @@ const filteredAttendance = computed(() => {
     }
     filtered = filtered.filter(a => a.location === locationMap[filters.value.location])
   }
-  
+
   return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
 
@@ -612,18 +612,18 @@ const visiblePages = computed(() => {
   const pages = []
   const total = totalPages.value
   const current = currentPage.value
-  
+
   // Always show first page
   if (total > 0) pages.push(1)
-  
+
   // Show pages around current page
   for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
     if (!pages.includes(i)) pages.push(i)
   }
-  
+
   // Always show last page
   if (total > 1 && !pages.includes(total)) pages.push(total)
-  
+
   return pages.sort((a, b) => a - b)
 })
 
@@ -712,9 +712,9 @@ const loadAttendanceData = async () => {
       status: filters.value.status || undefined,
       location_id: filters.value.location ? getLocationId(filters.value.location) : undefined
     }
-    
+
     const result = await satpamAPI.getAttendanceHistory(params)
-    
+
     if (result.data && Array.isArray(result.data)) {
       attendance.value = result.data
     } else {
@@ -772,10 +772,10 @@ const loadAttendanceData = async () => {
         }
       ]
     }
-    
+
   } catch (error) {
     console.error('Error loading attendance data:', error)
-    
+
     // Use fallback mock data
     attendance.value = [
       {
@@ -817,10 +817,10 @@ onMounted(() => {
   // Set default date range to current month
   const today = new Date()
   const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-  
+
   filters.value.startDate = firstDay.toISOString().split('T')[0]
   filters.value.endDate = today.toISOString().split('T')[0]
-  
+
   loadAttendanceData()
 })
 </script>

@@ -147,7 +147,7 @@ class SatpamController extends Controller
             ->get();
 
         $activities = [];
-        
+
         foreach ($attendances as $attendance) {
             if ($attendance->check_in_time) {
                 $activities[] = [
@@ -209,7 +209,7 @@ class SatpamController extends Controller
             ->first();
 
         $now = Carbon::now();
-        
+
         if (!$attendance) {
             // Create new attendance record (Check-in)
             $attendance = Attendance::create([
@@ -262,7 +262,7 @@ class SatpamController extends Controller
     public function getAttendanceHistory(Request $request)
     {
         $user = Auth::user();
-        
+
         $query = Attendance::where('user_id', $user->id)
             ->with('location');
 
@@ -358,7 +358,7 @@ class SatpamController extends Controller
             $scheduledTime = Carbon::createFromTime(8, 0); // 08:00 AM
             return $time->lte($scheduledTime) ? 'present' : 'late';
         }
-        
+
         return 'present';
     }
 
@@ -388,7 +388,7 @@ class SatpamController extends Controller
         }
 
         $diff = $checkIn->diff($checkOut);
-        
+
         $hours = $diff->h;
         $minutes = $diff->i;
 

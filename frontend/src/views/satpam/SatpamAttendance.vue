@@ -16,7 +16,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Current Status -->
           <div class="flex items-center space-x-2 sm:space-x-4">
             <div class="text-right hidden sm:block">
@@ -168,7 +168,7 @@
                   playsinline
                 ></video>
                 <canvas ref="canvasElement" class="hidden"></canvas>
-                
+
                 <!-- Scanner Overlay -->
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="w-64 h-64 border-2 border-white rounded-lg relative">
@@ -396,10 +396,10 @@ const errorMessage = ref({ title: '', description: '' })
 
 // Methods
 const formatTime = (date) => {
-  return date.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    second: '2-digit' 
+  return date.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   })
 }
 
@@ -450,16 +450,16 @@ const getProcessButtonText = () => {
 
 const calculateWorkDuration = () => {
   if (!todayAttendance.value.check_in) return '0 jam 0 menit'
-  
+
   const checkIn = new Date(`${new Date().toDateString()} ${todayAttendance.value.check_in}`)
-  const checkOut = todayAttendance.value.check_out 
+  const checkOut = todayAttendance.value.check_out
     ? new Date(`${new Date().toDateString()} ${todayAttendance.value.check_out}`)
     : new Date()
-  
+
   const diff = checkOut - checkIn
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  
+
   return `${hours} jam ${minutes} menit`
 }
 
@@ -473,12 +473,12 @@ const toggleScanMode = () => {
 const startCamera = async () => {
   cameraLoading.value = true
   cameraError.value = ''
-  
+
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment' }
     })
-    
+
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       cameraActive.value = true
@@ -502,9 +502,9 @@ const stopCamera = () => {
 
 const captureQR = async () => {
   if (!videoElement.value || !canvasElement.value) return
-  
+
   processing.value = true
-  
+
   try {
     // Capture frame from video
     const canvas = canvasElement.value
@@ -512,12 +512,12 @@ const captureQR = async () => {
     canvas.width = videoElement.value.videoWidth
     canvas.height = videoElement.value.videoHeight
     context.drawImage(videoElement.value, 0, 0)
-    
+
     // For demo purposes, simulate QR detection
     // In real implementation, use a QR code library like jsQR
     const simulatedQRData = 'QR_LOC_001_' + new Date().getTime()
     await processQRCode(simulatedQRData)
-    
+
   } catch (err) {
     console.error('Camera capture error:', err)
     showError('Error Capture', 'Gagal menangkap QR code. Coba lagi.')
@@ -531,16 +531,16 @@ const processQRCode = async (qrData = null) => {
     showError('Presensi Selesai', 'Anda sudah menyelesaikan presensi hari ini.')
     return
   }
-  
+
   processing.value = true
   const qrCode = qrData || manualQrCode.value.trim()
-  
+
   if (!qrCode) {
     showError('QR Code Kosong', 'Mohon masukkan kode QR.')
     processing.value = false
     return
   }
-  
+
   try {
     // Get current location
     let location = null
@@ -549,14 +549,14 @@ const processQRCode = async (qrData = null) => {
     } catch (locationError) {
       console.warn('Could not get location:', locationError)
     }
-    
+
     // Process QR attendance
     const result = await satpamAPI.processQrAttendance(
       qrCode,
       location?.latitude,
       location?.longitude
     )
-    
+
     if (result.success) {
       // Update attendance state
       if (result.type === 'check_in') {
@@ -566,7 +566,7 @@ const processQRCode = async (qrData = null) => {
         todayAttendance.value.check_out = result.time
         showSuccess('Check-out Berhasil!', `Anda telah check-out pada ${result.time}. Durasi kerja: ${result.work_duration}`)
       }
-      
+
       // Add to recent attendance
       recentAttendance.value.unshift({
         type: result.type,
@@ -575,22 +575,22 @@ const processQRCode = async (qrData = null) => {
         time: result.time,
         date: formatDate(new Date())
       })
-      
+
       // Clear manual input
       manualQrCode.value = ''
-      
+
       // Stop camera after successful scan
       if (cameraActive.value) {
         stopCamera()
       }
-      
+
       // Reload today's attendance
       await loadTodayAttendance()
-      
+
     } else {
       showError('Error Presensi', result.message)
     }
-    
+
   } catch (error) {
     console.error('Attendance error:', error)
     showError('Error Presensi', error.response?.data?.message || 'Gagal melakukan presensi. Coba lagi.')
@@ -678,7 +678,7 @@ onMounted(() => {
   timeInterval = setInterval(() => {
     currentTime.value = new Date()
   }, 1000)
-  
+
   // Load data
   loadTodayAttendance()
   loadRecentAttendance()
