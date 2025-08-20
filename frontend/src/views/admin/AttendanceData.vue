@@ -560,7 +560,7 @@ const paginationPages = computed(() => {
   if (!pagination.value || !pagination.value.last_page) {
     return []
   }
-  
+
   const pages = []
   const start = Math.max(1, pagination.value.current_page - 2)
   const end = Math.min(pagination.value.last_page, pagination.value.current_page + 2)
@@ -806,13 +806,13 @@ const bulkDelete = async () => {
 
 // Pagination methods
 const previousPage = () => {
-  if (pagination.value.current_page > 1) {
+  if (pagination.value && pagination.value.current_page > 1) {
     loadAttendanceData(pagination.value.current_page - 1)
   }
 }
 
 const nextPage = () => {
-  if (pagination.value.current_page < pagination.value.last_page) {
+  if (pagination.value && pagination.value.current_page < pagination.value.last_page) {
     loadAttendanceData(pagination.value.current_page + 1)
   }
 }
