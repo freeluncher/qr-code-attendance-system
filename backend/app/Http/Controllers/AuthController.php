@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuthService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class AuthController extends Controller
 {
-    // Login for admin and satpam (dapat menggunakan email atau username)
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
+    // Login endpoint
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -17,43 +23,38 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Cari user berdasarkan email atau username
-        $user = User::where('email', $credentials['login'])
-            ->orWhere('username', $credentials['login'])
-            ->first();
+        try {
+            $result = $this->authService->login($credentials['login'], $credentials['password']);
+            $user = $result['user'];
+            $token = $result['token'];
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Login berhasil.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role,
+                    'email' => $user->email,
+                    'username' => $user->username,
+                ],
+                'token' => $token,
+            ]);
+        } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Login gagal. Email/username atau password salah.'
             ], 401);
         }
+    }
 
-        // Generate Sanctum Token
-        $token = $user->createToken('auth_token')->plainTextToken;
+    // Logout Endpoint
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $this->authService->logout($user);
 
         return response()->json([
-            'message' => 'Login berhasil.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role,
-                'email' => $user->email,
-                'username' => $user->username,
-                'photo' => $user->photo,
-            ],
-            'token' => $token
+            'message' => 'Logout berhasil.'
         ]);
     }
 
-    // Logout User (revoke token)
-    public function logout(Request $request)
-    {
-        $user = Auth::user();
-        if ($user) {
-            $user->currentAccessToken()->delete(); // Revoke current token
-            return response()->json(['message' => 'Logout berhasil.']);
-        }
-
-        return response()->json(['message' => 'Unauthorized'], 401);
-    }
 }
