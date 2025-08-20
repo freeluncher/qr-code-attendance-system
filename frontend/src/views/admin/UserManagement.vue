@@ -363,6 +363,10 @@ const filteredUsers = computed(() => {
 })
 
 const paginationPages = computed(() => {
+  if (!pagination.value || !pagination.value.last_page) {
+    return []
+  }
+  
   const pages = []
   const current = pagination.value.current_page
   const last = pagination.value.last_page
