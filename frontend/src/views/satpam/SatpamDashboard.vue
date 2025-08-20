@@ -165,12 +165,19 @@
           <p class="text-sm text-gray-500 mt-1">7 hari terakhir</p>
         </div>
         <div class="p-6">
-          <div class="space-y-4">
+          <!-- Loading State -->
+          <div v-if="loading" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+
+          <!-- Attendance Records -->
+          <div v-else-if="recentAttendance.length > 0" class="space-y-4">
             <div v-for="(record, index) in recentAttendance" :key="index" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
                   <div class="h-10 w-10 rounded-full flex items-center justify-center" :class="record.statusBg">
-                    <component :is="record.icon" class="h-5 w-5" :class="record.iconColor" />
+                    <CheckCircleIcon v-if="record.status === 'Tepat Waktu'" class="h-5 w-5" :class="record.iconColor" />
+                    <ClockIcon v-else class="h-5 w-5" :class="record.iconColor" />
                   </div>
                 </div>
                 <div class="ml-4">
@@ -196,6 +203,13 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-8">
+            <ClipboardDocumentListIcon class="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p class="text-gray-500">Belum ada riwayat presensi</p>
+            <p class="text-gray-400 text-sm">Mulai presensi untuk melihat riwayat</p>
           </div>
         </div>
       </div>
@@ -261,6 +275,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import dashboardAPI from '../../services/dashboard'
 import {
   ShieldCheckIcon,
   UserIcon,
@@ -285,43 +300,21 @@ const authStore = useAuthStore()
 const currentTime = ref('')
 const currentShift = ref(null)
 const currentLocation = ref(null)
+const loading = ref(false)
 
 // Stats
 const todayStats = ref({
-  attendance: 2,
+  attendance: 0,
   totalShifts: 3
 })
 
 const monthStats = ref({
-  percentage: 92,
-  onTime: 27
+  percentage: 0,
+  onTime: 0
 })
 
 // Recent attendance records
-const recentAttendance = ref([
-  {
-    date: 'Hari ini, 19 Agustus 2025',
-    location: 'Pos Utama',
-    checkIn: '08:00',
-    checkOut: '16:00',
-    status: 'Tepat Waktu',
-    statusClass: 'bg-green-100 text-green-800',
-    statusBg: 'bg-green-100',
-    icon: CheckCircleIcon,
-    iconColor: 'text-green-600'
-  },
-  {
-    date: 'Kemarin, 18 Agustus 2025',
-    location: 'Pos Timur',
-    checkIn: '08:15',
-    checkOut: '16:00',
-    status: 'Terlambat',
-    statusClass: 'bg-red-100 text-red-800',
-    statusBg: 'bg-red-100',
-    icon: ClockIcon,
-    iconColor: 'text-red-600'
-  }
-])
+const recentAttendance = ref([])
 
 // Methods
 const updateTime = () => {
@@ -386,16 +379,15 @@ const handleLogout = async () => {
 }
 
 const openQRScanner = () => {
-  // Implement QR scanner functionality
-  alert('Fitur QR Scanner akan segera tersedia')
+  router.push('/satpam/attendance')
 }
 
 const viewSchedule = () => {
-  alert('Halaman jadwal shift akan segera tersedia')
+  router.push('/satpam/schedule')
 }
 
 const viewHistory = () => {
-  alert('Halaman riwayat presensi akan segera tersedia')
+  router.push('/satpam/history')
 }
 
 const reportIssue = () => {
@@ -407,21 +399,70 @@ const viewProfile = () => {
 }
 
 const loadData = async () => {
-  // Simulate loading data
-  currentShift.value = {
-    name: 'Shift Pagi',
-    start_time: '08:00',
-    end_time: '16:00',
-    notes: 'Shift normal hari kerja'
-  }
+  if (!authStore.user?.id) return
 
-  currentLocation.value = {
-    name: 'Pos Utama',
-    address: 'Gedung A, Lantai 1'
-  }
-}
+  loading.value = true
+  try {
+    // Load satpam dashboard data using proper API endpoints
+    const [statsData, attendanceData] = await Promise.all([
+      dashboardAPI.getSatpamStats(),
+      dashboardAPI.getSatpamHistory(7)
+    ])
 
-// Timer for clock
+    // Update today stats
+    todayStats.value = {
+      attendance: statsData.today.has_attendance ? 1 : 0,
+      totalShifts: 1 // This could come from shifts API later
+    }
+
+    // Update month stats
+    monthStats.value = {
+      percentage: statsData.this_month.on_time_rate,
+      onTime: statsData.this_month.on_time_count
+    }
+
+    // Format attendance data for display
+    recentAttendance.value = attendanceData.map(attendance => ({
+      id: attendance.id,
+      date: attendance.formatted_date,
+      location: attendance.location,
+      checkIn: attendance.check_in_time || '-',
+      checkOut: attendance.check_out_time || '-',
+      status: attendance.status_label,
+      statusClass: attendance.status === 'tepat_waktu'
+        ? 'bg-green-100 text-green-800'
+        : 'bg-red-100 text-red-800',
+      statusBg: attendance.status === 'tepat_waktu'
+        ? 'bg-green-100'
+        : 'bg-red-100',
+      iconColor: attendance.status === 'tepat_waktu'
+        ? 'text-green-600'
+        : 'text-red-600'
+    }))
+
+    // Mock current shift and location (could come from API)
+    currentShift.value = {
+      name: 'Shift Pagi',
+      start_time: '08:00',
+      end_time: '16:00',
+      notes: 'Shift normal hari kerja'
+    }
+
+    currentLocation.value = {
+      name: 'Pos Utama',
+      address: 'Gedung A, Lantai 1'
+    }
+
+  } catch (error) {
+    console.error('Error loading satpam data:', error)
+    // Fallback to default data
+    todayStats.value = { attendance: 0, totalShifts: 1 }
+    monthStats.value = { percentage: 0, onTime: 0 }
+    recentAttendance.value = []
+  } finally {
+    loading.value = false
+  }
+}// Timer for clock
 let timeInterval = null
 
 onMounted(() => {
