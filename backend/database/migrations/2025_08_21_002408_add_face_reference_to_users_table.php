@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('reference_photo_url')->nullable()->after('email_verified_at');
-            $table->boolean('face_registered')->default(false)->after('reference_photo_url');
+            //
         });
     }
 
@@ -23,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['reference_photo_url', 'face_registered']);
+            //
         });
     }
 };

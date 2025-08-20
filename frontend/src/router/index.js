@@ -126,15 +126,15 @@ const router = createRouter({
       }
     },
     {
-          path: 'attendance',
-          name: 'SatpamAttendance',
-          component: () => import('../views/satpam/SatpamAttendance.vue')
-        },
-        {
-          path: 'face-registration',
-          name: 'SatpamFaceRegistration',
-          component: () => import('../views/satpam/FaceRegistration.vue')
-        },
+      path: '/satpam/attendance',
+      name: 'satpam-attendance',
+      component: () => import('../views/satpam/SatpamAttendance.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresRole: 'satpam',
+        title: 'Presensi - QR Attendance System'
+      }
+    },
     {
       path: '/satpam/schedule',
       name: 'satpam-schedule',

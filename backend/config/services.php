@@ -40,8 +40,4 @@ return [
         'enabled' => env('GEOCODING_ENABLED', true),
     ],
 
-    'face_api' => [
-        'url' => env('FACE_API_URL', 'http://localhost:8001'),
-    ],
-
 ];

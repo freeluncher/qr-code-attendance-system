@@ -28,59 +28,28 @@ class SatpamAPI {
   }
 
   // QR Code Attendance
-  async processQrAttendance(qrCode, latitude = null, longitude = null, photo = null, lateReason = null) {
+  async processQrAttendance(qrCode, latitude = null, longitude = null) {
     // Validate qrCode
     if (!qrCode || typeof qrCode !== 'string' || qrCode.includes('[object')) {
       throw new Error('Invalid QR code format')
     }
-    
+
     // Clean up the qrCode string
     qrCode = qrCode.trim()
-    
+
     console.log('Sending QR attendance data:', {
       qr_code: qrCode,
       latitude,
       longitude,
-      photo: photo ? 'file provided' : 'no file',
-      late_reason: lateReason,
       qrCodeType: typeof qrCode,
       qrCodeLength: qrCode.length
     })
-    
-    // Use FormData for photo upload
-    const formData = new FormData()
-    formData.append('qr_code', qrCode)
-    
-    if (latitude !== null) {
-      formData.append('latitude', latitude)
-    }
-    if (longitude !== null) {
-      formData.append('longitude', longitude)
-    }
-    if (photo) {
-      formData.append('photo', photo)
-    }
-    if (lateReason) {
-      formData.append('late_reason', lateReason)
-    }
-    
-    return await api.post('/satpam/qr-attendance', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  }
 
-  // Face Recognition
-  async registerFaceReference(photo) {
-    const formData = new FormData()
-    formData.append('photo', photo)
-    
-    return await api.post('/satpam/register-face', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    return await api.post('/satpam/qr-attendance', {
+      qr_code: qrCode,
+      latitude,
+      longitude
     })
-  }
-
-  async checkFaceRegistration() {
-    return await api.get('/satpam/check-face-registration')
   }
 
   // History
