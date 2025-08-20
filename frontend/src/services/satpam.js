@@ -29,6 +29,22 @@ class SatpamAPI {
 
   // QR Code Attendance
   async processQrAttendance(qrCode, latitude = null, longitude = null) {
+    // Validate qrCode
+    if (!qrCode || typeof qrCode !== 'string' || qrCode.includes('[object')) {
+      throw new Error('Invalid QR code format')
+    }
+    
+    // Clean up the qrCode string
+    qrCode = qrCode.trim()
+    
+    console.log('Sending QR attendance data:', {
+      qr_code: qrCode,
+      latitude,
+      longitude,
+      qrCodeType: typeof qrCode,
+      qrCodeLength: qrCode.length
+    })
+    
     return await api.post('/satpam/qr-attendance', {
       qr_code: qrCode,
       latitude,
