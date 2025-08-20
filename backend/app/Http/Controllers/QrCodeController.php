@@ -70,4 +70,23 @@ class QrCodeController extends Controller
         $this->qrCodeService->deleteQrCode($id);
         return response()->json(['message' => 'QR Code deleted successfully.'], 200);
     }
+
+    public function renew(Request $request, $id)
+    {
+        $data = $request->validate([
+            'duration_days' => 'sometimes|integer|min:1|max:365',
+        ]);
+
+        $durationDays = $data['duration_days'] ?? 30; // Default 30 days
+        $newExpiresAt = now()->addDays($durationDays);
+
+        $qrcode = $this->qrCodeService->updateQrCode($id, [
+            'expires_at' => $newExpiresAt
+        ]);
+
+        return response()->json([
+            'message' => 'QR Code renewed successfully.',
+            'qrcode' => $qrcode,
+        ]);
+    }
 }

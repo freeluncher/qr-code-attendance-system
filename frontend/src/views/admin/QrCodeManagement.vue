@@ -351,7 +351,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import api from '../../services/api'
+import api, { qrCodeAPI } from '../../services/api'
 import {
   AcademicCapIcon,
   QrCodeIcon,
@@ -416,7 +416,7 @@ const filteredQrCodes = computed(() => {
 const loadQrCodes = async () => {
   loading.value = true
   try {
-    const response = await api.get('/qr-codes')
+    const response = await qrCodeAPI.getQrCodes()
     qrCodes.value = response.data
   } catch (error) {
     console.error('Error loading QR codes:', error)
@@ -480,7 +480,7 @@ const closeCreateModal = () => {
 const generateQrCode = async () => {
   generating.value = true
   try {
-    await api.post('/qr-codes', createForm.value)
+    await qrCodeAPI.createQrCode(createForm.value)
     closeCreateModal()
     await loadQrCodes()
   } catch (error) {
@@ -522,7 +522,7 @@ const copyQrCode = async (qrCode) => {
 
 const renewQrCode = async (qrCode) => {
   try {
-    await api.post(`/qr-codes/${qrCode.id}/renew`, { duration_days: 30 })
+    await qrCodeAPI.renewQrCode(qrCode.id, { duration_days: 30 })
     await loadQrCodes()
   } catch (error) {
     console.error('Error renewing QR code:', error)
@@ -538,7 +538,7 @@ const confirmDelete = (qrCode) => {
 const deleteQrCode = async () => {
   deleting.value = true
   try {
-    await api.delete(`/qr-codes/${qrCodeToDelete.value.id}`)
+    await qrCodeAPI.deleteQrCode(qrCodeToDelete.value.id)
     showDeleteModal.value = false
     qrCodeToDelete.value = null
     await loadQrCodes()
