@@ -40,11 +40,20 @@ class UserController extends Controller
             'role' => 'required|in:admin,satpam',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'username' => 'required|string|max:255|unique:users,username',
             'photo' => 'nullable|string',
         ]);
         $user = $this->userService->createUser($data);
-        return response()->json($user, 201);
+
+        return response()->json([
+            'message' => 'User berhasil dibuat.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'username' => $user->username,
+            ],
+        ], 201);
     }
 
     // Update user
