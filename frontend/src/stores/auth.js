@@ -12,7 +12,12 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.token,
     isAdmin: (state) => state.user?.role === 'admin',
-    isSatpam: (state) => state.user?.role === 'satpam'
+    isSatpam: (state) => state.user?.role === 'satpam',
+    dashboardRoute: (state) => {
+      if (state.user?.role === 'admin') return '/admin/dashboard'
+      if (state.user?.role === 'satpam') return '/satpam/dashboard'
+      return '/login'
+    }
   },
 
   actions: {
