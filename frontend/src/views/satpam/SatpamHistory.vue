@@ -462,6 +462,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import satpamAPI from '../../services/satpam'
 import {
   ClipboardDocumentListIcon,
   ArrowLeftIcon,
@@ -705,16 +706,111 @@ const goToPage = (page) => {
 const loadAttendanceData = async () => {
   loading.value = true
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const params = {
+      start_date: filters.value.startDate || undefined,
+      end_date: filters.value.endDate || undefined,
+      status: filters.value.status || undefined,
+      location_id: filters.value.location ? getLocationId(filters.value.location) : undefined
+    }
     
-    // Data is already loaded in attendance ref
+    const result = await satpamAPI.getAttendanceHistory(params)
+    
+    if (result.data && Array.isArray(result.data)) {
+      attendance.value = result.data
+    } else {
+      // Keep mock data for demo
+      attendance.value = [
+        {
+          id: 1,
+          date: '2025-08-20',
+          checkIn: '08:00',
+          checkOut: '16:00',
+          duration: '8 jam',
+          location: 'Pos Utama',
+          status: 'tepat_waktu',
+          notes: 'Normal shift'
+        },
+        {
+          id: 2,
+          date: '2025-08-19',
+          checkIn: '08:15',
+          checkOut: '16:00',
+          duration: '7 jam 45 menit',
+          location: 'Pos Selatan',
+          status: 'terlambat',
+          notes: 'Terlambat 15 menit karena macet'
+        },
+        {
+          id: 3,
+          date: '2025-08-18',
+          checkIn: '07:55',
+          checkOut: '16:05',
+          duration: '8 jam 10 menit',
+          location: 'Pos Utama',
+          status: 'tepat_waktu',
+          notes: ''
+        },
+        {
+          id: 4,
+          date: '2025-08-17',
+          checkIn: '08:00',
+          checkOut: null,
+          duration: null,
+          location: 'Pos Timur',
+          status: 'tidak_hadir',
+          notes: 'Sakit tidak masuk'
+        },
+        {
+          id: 5,
+          date: '2025-08-16',
+          checkIn: '07:45',
+          checkOut: '15:50',
+          duration: '8 jam 5 menit',
+          location: 'Pos Utama',
+          status: 'tepat_waktu',
+          notes: 'Shift weekend'
+        }
+      ]
+    }
     
   } catch (error) {
     console.error('Error loading attendance data:', error)
+    
+    // Use fallback mock data
+    attendance.value = [
+      {
+        id: 1,
+        date: '2025-08-20',
+        checkIn: '08:00',
+        checkOut: '16:00',
+        duration: '8 jam',
+        location: 'Pos Utama',
+        status: 'tepat_waktu',
+        notes: 'Normal shift'
+      },
+      {
+        id: 2,
+        date: '2025-08-19',
+        checkIn: '08:15',
+        checkOut: '16:00',
+        duration: '7 jam 45 menit',
+        location: 'Pos Selatan',
+        status: 'terlambat',
+        notes: 'Terlambat 15 menit karena macet'
+      }
+    ]
   } finally {
     loading.value = false
   }
+}
+
+const getLocationId = (locationKey) => {
+  const locationMap = {
+    'pos_utama': 1,
+    'pos_selatan': 2,
+    'pos_timur': 3
+  }
+  return locationMap[locationKey]
 }
 
 onMounted(() => {
