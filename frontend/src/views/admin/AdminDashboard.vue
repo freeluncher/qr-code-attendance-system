@@ -109,17 +109,94 @@
       </div>
 
       <!-- Charts and Tables Row -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <!-- Attendance Chart -->
-        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Statistik Kehadiran 7 Hari Terakhir</h3>
-          <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-            <div class="text-center">
-              <ChartBarIcon class="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p class="text-gray-500">Chart akan ditampilkan di sini</p>
-              <p class="text-sm text-gray-400">Integrasi dengan Chart.js atau library chart lainnya</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Attendance Line Chart -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Statistik Kehadiran 7 Hari Terakhir</h3>
+            <div class="flex space-x-2">
+              <button 
+                @click="changeChartPeriod(7)"
+                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 7 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+              >
+                7 Hari
+              </button>
+              <button 
+                @click="changeChartPeriod(14)"
+                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 14 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+              >
+                14 Hari
+              </button>
+              <button 
+                @click="changeChartPeriod(30)"
+                :class="['px-3 py-1 text-sm rounded-md', chartPeriod === 30 ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500 hover:text-gray-700']"
+              >
+                30 Hari
+              </button>
             </div>
           </div>
+          
+          <!-- Loading State -->
+          <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <!-- Line Chart -->
+          <AttendanceLineChart 
+            v-else
+            :data="chartData" 
+            :title="`Trend Kehadiran ${chartPeriod} Hari Terakhir`"
+          />
+        </div>
+
+        <!-- Attendance Distribution Donut Chart -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Distribusi Kehadiran Hari Ini</h3>
+          
+          <!-- Loading State -->
+          <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <!-- Donut Chart -->
+          <AttendanceDonutChart 
+            v-else
+            :data="stats.today" 
+            title="Kehadiran Hari Ini"
+          />
+
+          <!-- Summary Stats -->
+          <div class="mt-4 grid grid-cols-2 gap-4 text-center">
+            <div class="bg-green-50 rounded-lg p-3">
+              <p class="text-2xl font-bold text-green-600">{{ stats.today?.on_time_count || 0 }}</p>
+              <p class="text-xs text-green-700">Tepat Waktu</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-3">
+              <p class="text-2xl font-bold text-red-600">{{ stats.today?.late_count || 0 }}</p>
+              <p class="text-xs text-red-700">Terlambat</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Weekly Bar Chart -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Perbandingan Kehadiran per Hari</h3>
+          
+          <!-- Loading State -->
+          <div v-if="loading" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <!-- Bar Chart -->
+          <AttendanceBarChart 
+            v-else
+            :data="chartData" 
+            title="Kehadiran Harian"
+            type="daily"
+          />
         </div>
 
         <!-- Top Late Employees -->
@@ -147,7 +224,7 @@
               </div>
               <div class="text-right">
                 <p class="text-sm font-semibold text-red-600">{{ item.lateCount }}x</p>
-                <p class="text-xs text-gray-500">minggu ini</p>
+                <p class="text-xs text-gray-500">{{ chartPeriod }} hari</p>
               </div>
             </div>
           </div>
@@ -289,6 +366,12 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import dashboardAPI from '../../services/dashboard'
+
+// Chart Components
+import AttendanceLineChart from '../../components/charts/AttendanceLineChart.vue'
+import AttendanceDonutChart from '../../components/charts/AttendanceDonutChart.vue'
+import AttendanceBarChart from '../../components/charts/AttendanceBarChart.vue'
+
 import {
   AcademicCapIcon,
   UsersIcon,
@@ -310,6 +393,7 @@ const authStore = useAuthStore()
 
 // Reactive state
 const loading = ref(false)
+const chartPeriod = ref(7) // Default to 7 days
 
 // Stats data
 const stats = ref({
@@ -353,8 +437,8 @@ const loadDashboardData = async () => {
     const [statsData, activities, lateEmployees, chartDataResult] = await Promise.all([
       dashboardAPI.getAdminStats(),
       dashboardAPI.getRecentActivities(5),
-      dashboardAPI.getTopLateEmployees(7, 5),
-      dashboardAPI.getAttendanceChartData(7)
+      dashboardAPI.getTopLateEmployees(chartPeriod.value, 5),
+      dashboardAPI.getAttendanceChartData(chartPeriod.value)
     ])
 
     stats.value = statsData
@@ -380,6 +464,32 @@ const loadDashboardData = async () => {
         attendance_rate: 0
       }
     }
+  } finally {
+    loading.value = false
+  }
+}
+
+// Change chart period and reload data
+const changeChartPeriod = async (days) => {
+  chartPeriod.value = days
+  loading.value = true
+  
+  try {
+    // Reload chart data and late employees with new period
+    const [lateEmployees, chartDataResult] = await Promise.all([
+      dashboardAPI.getTopLateEmployees(days, 5),
+      dashboardAPI.getAttendanceChartData(days)
+    ])
+    
+    topLateEmployees.value = lateEmployees.map(emp => ({
+      name: emp.name,
+      location: emp.location,
+      lateCount: emp.late_count
+    }))
+    chartData.value = chartDataResult
+    
+  } catch (error) {
+    console.error('Error loading chart data:', error)
   } finally {
     loading.value = false
   }
