@@ -18,13 +18,13 @@ class UserRepository{
     }
 
     // Membuat user baru
-    public function createUser(array $data)
+    public function create(array $data)
     {
         return User::create($data);
     }
 
     // Update data user by id
-    public function updateUser($id, array $data)
+    public function update($id, array $data)
     {
         $user = User::findOrFail($id);
         $user->update($data);
@@ -32,7 +32,7 @@ class UserRepository{
     }
 
     // Hapus user by id
-    public function deleteUser($id)
+    public function delete($id)
     {
         $user = User::findOrFail($id);
         return $user->delete();
