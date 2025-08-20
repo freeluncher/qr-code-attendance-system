@@ -200,7 +200,7 @@
                     qrCode.is_expired ? 'text-red-600' : 'text-gray-900'
                   ]"
                 >
-                  {{ formatDate(qrCode.expires_at) }}
+                  {{ formatExpiresInHours(qrCode.expires_at) }}
                 </span>
               </div>
               <div class="flex items-center justify-between text-sm">
@@ -283,7 +283,7 @@
             </select>
           </div>
 
-          <div>
+                    <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Durasi Aktif</label>
             <select
               v-model="createForm.expires_in_hours"
@@ -470,6 +470,33 @@ const filteredQrCodes = computed(() => {
 
   return filtered
 })
+
+// Helper function to format expires time in hours
+const formatExpiresInHours = (expiresAt) => {
+  if (!expiresAt) return 'Tidak diketahui'
+
+  const now = new Date()
+  const expiry = new Date(expiresAt)
+
+  if (expiry <= now) {
+    return 'Sudah expired'
+  }
+
+  const diffMs = expiry - now
+  const diffHours = Math.ceil(diffMs / (1000 * 60 * 60)) // Round up to next hour
+  const diffDays = Math.floor(diffHours / 24)
+  const remainingHours = diffHours % 24
+
+  if (diffDays > 0 && remainingHours > 0) {
+    return `${diffDays} hari ${remainingHours} jam lagi`
+  } else if (diffDays > 0) {
+    return `${diffDays} hari lagi`
+  } else if (diffHours > 1) {
+    return `${diffHours} jam lagi`
+  } else {
+    return 'Kurang dari 1 jam lagi'
+  }
+}
 
 // Methods
 const loadQrCodes = async () => {

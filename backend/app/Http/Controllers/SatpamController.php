@@ -191,10 +191,8 @@ class SatpamController extends Controller
         // Verify QR code
         $qrCode = QrCode::where('code', $request->qr_code)
             ->where('expires_at', '>', now())
-            ->with('location')
-            ->first();
-
-        if (!$qrCode) {
+            ->with('location', 'shift')
+            ->first();        if (!$qrCode) {
             return response()->json([
                 'success' => false,
                 'message' => 'QR Code tidak valid atau sudah expired'
@@ -209,11 +207,16 @@ class SatpamController extends Controller
         $now = Carbon::now();
 
         if ($existingAttendance) {
+            // If already checked in, this could be a check-out
+            // But for now, we'll prevent duplicate attendance
             return response()->json([
                 'success' => false,
                 'message' => 'Anda sudah melakukan presensi hari ini'
             ], 400);
         }
+
+        // Determine attendance status based on shift time
+        $status = $this->determineAttendanceStatus($qrCode->shift, $now);
 
         // Create new attendance record
         $attendance = Attendance::create([
@@ -224,7 +227,7 @@ class SatpamController extends Controller
             'scanned_at' => $now,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'status' => 'on_time' // default status, could be calculated based on time
+            'status' => $status
         ]);
 
         // Increment scan count
@@ -232,10 +235,11 @@ class SatpamController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Presensi berhasil',
+            'message' => 'Check-in berhasil',
             'time' => $now->format('H:i'),
             'location' => $qrCode->location->name,
-            'status' => $attendance->status
+            'status' => $attendance->status,
+            'shift' => $qrCode->shift->name
         ]);
     }
 
@@ -341,6 +345,29 @@ class SatpamController extends Controller
         }
 
         return 'present';
+    }
+
+    /**
+     * Determine attendance status based on shift time
+     */
+    private function determineAttendanceStatus($shift, $currentTime)
+    {
+        if (!$shift) {
+            return 'on_time'; // default
+        }
+
+        // Parse shift start time
+        $shiftStartTime = Carbon::createFromTimeString($shift->start_time);
+        $currentTimeOnly = Carbon::createFromTime($currentTime->hour, $currentTime->minute, $currentTime->second);
+
+        // Allow 15 minutes tolerance for "on_time"
+        $toleranceTime = $shiftStartTime->copy()->addMinutes(15);
+
+        if ($currentTimeOnly->lte($toleranceTime)) {
+            return 'on_time';
+        } else {
+            return 'late';
+        }
     }
 
     /**

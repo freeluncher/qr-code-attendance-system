@@ -176,6 +176,14 @@
                     <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-400 rounded-tr-lg"></div>
                     <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-400 rounded-bl-lg"></div>
                     <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-lg"></div>
+
+                    <!-- Scanning status -->
+                    <div v-if="cameraActive && !processing" class="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
+                      🔍 Mencari QR Code...
+                    </div>
+                    <div v-if="processing" class="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-green-400 text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
+                      ✅ Memproses...
+                    </div>
                   </div>
                 </div>
 
@@ -359,6 +367,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import satpamAPI from '../../services/satpam'
+import jsQR from 'jsqr'
 import {
   QrCodeIcon,
   ArrowLeftIcon,
@@ -494,6 +503,16 @@ const startCamera = async () => {
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       cameraActive.value = true
+
+      // Start auto-scanning when video is ready
+      videoElement.value.onloadedmetadata = () => {
+        console.log('📹 Camera started, beginning QR scan...')
+        setTimeout(() => {
+          if (cameraActive.value) {
+            captureQR()
+          }
+        }, 1000) // Wait 1 second for camera to stabilize
+      }
     }
   } catch (error) {
     console.error('Camera error:', error)
@@ -525,14 +544,33 @@ const captureQR = async () => {
     canvas.height = videoElement.value.videoHeight
     context.drawImage(videoElement.value, 0, 0)
 
-    // For demo purposes, simulate QR detection
-    // In real implementation, use a QR code library like jsQR
-    const simulatedQRData = 'QR_LOC_001_' + new Date().getTime()
-    await processQRCode(simulatedQRData)
+    // Get image data for QR detection
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+
+    // Try to decode QR code using jsQR
+    const qrCodeResult = jsQR(imageData.data, imageData.width, imageData.height)
+
+    if (qrCodeResult) {
+      console.log('🎯 QR Code detected:', qrCodeResult.data)
+
+      // Stop camera and process the QR code
+      stopCamera()
+      await processQRCode(qrCodeResult.data)
+    } else {
+      // No QR code found, continue scanning
+      console.log('🔍 No QR code detected, continuing scan...')
+
+      // Auto-retry after a short delay
+      setTimeout(() => {
+        if (cameraActive.value && !processing.value) {
+          captureQR()
+        }
+      }, 500) // Retry every 500ms
+    }
 
   } catch (err) {
     console.error('Camera capture error:', err)
-    showError('Error Capture', 'Gagal menangkap QR code. Coba lagi.')
+    showError('Error Capture', 'Gagal menangkap QR code. Silakan coba lagi atau gunakan mode manual.')
   } finally {
     processing.value = false
   }
@@ -569,7 +607,7 @@ const processQRCode = async (qrData = null) => {
         qrCode = parsedData.code
       }
     }
-  } catch (error) {
+  } catch {
     // If parsing fails, use the original qrCode value
     console.log('QR Code is not JSON, using as string:', qrCode)
   }

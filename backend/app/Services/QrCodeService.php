@@ -22,19 +22,11 @@ class QrCodeService{
     {
         $qrCode = $this->qrCodeRepository->findQrCodeById($id);
 
-        // Generate QR Code image if requested
-        $qrCodeData = [
-            'id' => $qrCode->id,
-            'code' => $qrCode->code,
-            'location_id' => $qrCode->location_id,
-            'shift_id' => $qrCode->shift_id,
-            'expires_at' => $qrCode->expires_at,
-        ];
-
+        // Generate QR Code image if requested - using only the code for simplicity
         $qrCodeImage = QrCode::format('svg')
             ->size(300)
             ->margin(10)
-            ->generate(json_encode($qrCodeData));
+            ->generate($qrCode->code); // Just the UUID code, not JSON object
 
         // Convert to base64 for easy frontend display
         $qrCode->qr_image = 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
@@ -54,19 +46,11 @@ class QrCodeService{
 
         $qrCode = $this->qrCodeRepository->createQrCode($data);
 
-        // Generate QR Code image as base64
-        $qrCodeData = [
-            'id' => $qrCode->id,
-            'code' => $qrCode->code,
-            'location_id' => $qrCode->location_id,
-            'shift_id' => $qrCode->shift_id,
-            'expires_at' => $qrCode->expires_at,
-        ];
-
+        // Generate QR Code image as base64 - using only the code for simplicity
         $qrCodeImage = QrCode::format('svg')
             ->size(300)
             ->margin(10)
-            ->generate(json_encode($qrCodeData));
+            ->generate($qrCode->code); // Just the UUID code, not JSON object
 
         // Convert to base64 for easy frontend display
         $qrCode->qr_image = 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
@@ -93,18 +77,11 @@ class QrCodeService{
 
     public function generateQrCodeImage($qrCode, $size = 300)
     {
-        $qrCodeData = [
-            'id' => $qrCode->id,
-            'code' => $qrCode->code,
-            'location_id' => $qrCode->location_id,
-            'shift_id' => $qrCode->shift_id,
-            'expires_at' => $qrCode->expires_at,
-        ];
-
+        // Generate QR Code image using only the code for simplicity
         $qrCodeImage = QrCode::format('svg')
             ->size($size)
             ->margin(10)
-            ->generate(json_encode($qrCodeData));
+            ->generate($qrCode->code); // Just the UUID code, not JSON object
 
         return 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
     }
