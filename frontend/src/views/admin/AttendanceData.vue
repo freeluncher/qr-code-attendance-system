@@ -263,11 +263,11 @@
             <div>
               <p class="text-sm text-gray-700">
                 Menampilkan
-                <span class="font-medium">{{ pagination.from }}</span>
+                <span class="font-medium">{{ pagination?.from || 0 }}</span>
                 sampai
-                <span class="font-medium">{{ pagination.to }}</span>
+                <span class="font-medium">{{ pagination?.to || 0 }}</span>
                 dari
-                <span class="font-medium">{{ pagination.total }}</span>
+                <span class="font-medium">{{ pagination?.total || 0 }}</span>
                 hasil
               </p>
             </div>

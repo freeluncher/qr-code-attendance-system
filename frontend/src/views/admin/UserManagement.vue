@@ -384,7 +384,12 @@ const loadUsers = async (page = 1) => {
   try {
     const response = await api.get(`/users?page=${page}&role=satpam`)
     users.value = response.data
-    pagination.value = response.pagination
+    pagination.value = response.pagination || {
+      current_page: 1,
+      per_page: 10,
+      total: response.data.length,
+      last_page: 1
+    }
   } catch (error) {
     console.error('Error loading users:', error)
     // Fallback data for development
@@ -414,6 +419,13 @@ const loadUsers = async (page = 1) => {
         created_at: '2025-01-05T00:00:00Z'
       }
     ]
+    // Set fallback pagination
+    pagination.value = {
+      current_page: 1,
+      per_page: 10,
+      total: 3,
+      last_page: 1
+    }
   } finally {
     loading.value = false
   }
