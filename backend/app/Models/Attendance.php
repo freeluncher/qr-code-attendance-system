@@ -23,11 +23,17 @@ class Attendance extends Model
         'check_out_latitude',
         'check_out_longitude',
         'distance',
+        'face_landmarks',
+        'face_verified',
+        'face_confidence',
+        'late_reason',
     ];
 
     protected $casts = [
         'scanned_at' => 'datetime',
         'check_out_time' => 'datetime',
+        'face_landmarks' => 'array',
+        'face_verified' => 'boolean',
     ];
 
     // Relation

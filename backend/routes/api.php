@@ -73,7 +73,12 @@ Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
         Route::get('/recent-activities', [SatpamController::class, 'getRecentActivities']);
 
         // Attendance/QR Scanning
-        Route::post('/qr-attendance', [SatpamController::class, 'processQrAttendance']);
+        // QR Attendance
+    Route::post('/qr-attendance', [SatpamController::class, 'processQrAttendance']);
+    
+    // Face Recognition
+    Route::post('/register-face', [SatpamController::class, 'registerFaceReference']);
+    Route::get('/check-face-registration', [SatpamController::class, 'checkFaceRegistration']);
 
         // History
         Route::get('/attendance-history', [SatpamController::class, 'getAttendanceHistory']);

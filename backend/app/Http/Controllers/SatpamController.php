@@ -6,13 +6,21 @@ use App\Models\Attendance;
 use App\Models\QrCode;
 use App\Models\User;
 use App\Models\Shift;
+use App\Services\FaceRecognitionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class SatpamController extends Controller
 {
+    protected $faceService;
+
+    public function __construct(FaceRecognitionService $faceService)
+    {
+        $this->faceService = $faceService;
+    }
     /**
      * Get satpam dashboard statistics
      */
@@ -182,7 +190,9 @@ class SatpamController extends Controller
         $request->validate([
             'qr_code' => 'required|string',
             'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric'
+            'longitude' => 'nullable|numeric',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // max 5MB
+            'late_reason' => 'nullable|string|max:500'
         ]);
 
         $user = Auth::user();
@@ -269,6 +279,54 @@ class SatpamController extends Controller
         // Determine attendance status based on shift time
         $status = $this->determineAttendanceStatus($qrCode->shift, $now);
 
+        // Initialize face recognition variables
+        $photoPath = null;
+        $faceLandmarks = null;
+        $faceVerified = false;
+        $faceConfidence = null;
+        $faceValidationMessage = '';
+
+        // Process photo if provided
+        if ($request->hasFile('photo')) {
+            try {
+                // Store photo
+                $photoPath = $this->faceService->storeAttendancePhoto($request->file('photo'), $user->id, 'check_in');
+                
+                // Detect face landmarks
+                $faceDetection = $this->faceService->detectFace($request->file('photo'));
+                
+                if ($faceDetection['success']) {
+                    $faceLandmarks = [
+                        'face_location' => $faceDetection['face_location'] ?? null,
+                        'face_landmarks' => $faceDetection['face_landmarks'] ?? null,
+                        'face_quality' => $faceDetection['face_quality'] ?? null
+                    ];
+                    
+                    // Verify face if user has registered reference
+                    if ($user->face_registered) {
+                        $faceVerification = $this->faceService->verifyFace($user->id, $request->file('photo'));
+                        
+                        if ($faceVerification['success']) {
+                            $faceVerified = $faceVerification['match'] ?? false;
+                            $faceConfidence = $faceVerification['confidence'] ?? null;
+                            
+                            if (!$faceVerified) {
+                                $faceValidationMessage = 'Wajah tidak cocok dengan referensi. ';
+                            }
+                        } else {
+                            $faceValidationMessage = 'Gagal memverifikasi wajah. ';
+                        }
+                    } else {
+                        $faceValidationMessage = 'Belum ada foto referensi. ';
+                    }
+                } else {
+                    $faceValidationMessage = $faceDetection['message'] . ' ';
+                }
+            } catch (\Exception $e) {
+                $faceValidationMessage = 'Error memproses foto: ' . $e->getMessage() . ' ';
+            }
+        }
+
         // Create new attendance record
         $attendance = Attendance::create([
             'user_id' => $user->id,
@@ -279,14 +337,19 @@ class SatpamController extends Controller
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'distance' => $distance,
-            'status' => $status
+            'status' => $status,
+            'photo_url' => $photoPath,
+            'face_landmarks' => $faceLandmarks,
+            'face_verified' => $faceVerified,
+            'face_confidence' => $faceConfidence,
+            'late_reason' => $request->late_reason
         ]);
 
         // Create audit log for check-in
         \App\Models\AttendanceAudit::create([
             'attendance_id' => $attendance->id,
             'action' => 'check_in',
-            'description' => "Check-in at {$qrCode->location->name}. Distance: " . ($distance ? "{$distance}m" : 'unknown') . ". Coordinates: {$request->latitude}, {$request->longitude}. Status: {$status}"
+            'description' => "Check-in at {$qrCode->location->name}. Distance: " . ($distance ? "{$distance}m" : 'unknown') . ". Coordinates: {$request->latitude}, {$request->longitude}. Status: {$status}. Face: " . ($faceVerified ? 'verified' : 'not verified') . ". " . $faceValidationMessage
         ]);
 
         // Increment scan count
@@ -295,11 +358,13 @@ class SatpamController extends Controller
         return response()->json([
             'success' => true,
             'type' => 'check_in',
-            'message' => 'Check-in berhasil',
+            'message' => 'Check-in berhasil' . ($faceValidationMessage ? ' (' . trim($faceValidationMessage) . ')' : ''),
             'time' => $now->format('H:i'),
             'location' => $qrCode->location->name,
             'status' => $attendance->status,
-            'shift' => $qrCode->shift->name
+            'shift' => $qrCode->shift->name,
+            'face_verified' => $faceVerified,
+            'face_confidence' => $faceConfidence
         ]);
     }
 
@@ -485,5 +550,66 @@ class SatpamController extends Controller
         $distance = $earthRadius * $c;
 
         return round($distance, 1); // Return distance rounded to 1 decimal place
+    }
+
+    /**
+     * Register face reference for user
+     */
+    public function registerFaceReference(Request $request)
+    {
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:5120'
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            // Register face with Face API
+            $result = $this->faceService->registerFace($user->id, $request->file('photo'));
+
+            if ($result['success']) {
+                // Store reference photo
+                $photoPath = $this->faceService->storeAttendancePhoto(
+                    $request->file('photo'), 
+                    $user->id, 
+                    'reference'
+                );
+
+                // Update user record
+                $user->update([
+                    'reference_photo_url' => $photoPath,
+                    'face_registered' => true
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Foto referensi wajah berhasil didaftarkan'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Gagal mendaftarkan foto referensi'
+            ], 400);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check if user has registered face reference
+     */
+    public function checkFaceRegistration()
+    {
+        $user = Auth::user();
+
+        return response()->json([
+            'registered' => $user->face_registered,
+            'reference_photo' => $user->reference_photo_url ? Storage::url($user->reference_photo_url) : null
+        ]);
     }
 }

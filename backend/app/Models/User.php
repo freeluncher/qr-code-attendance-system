@@ -25,6 +25,8 @@ class User extends Authenticatable
         'password',
         'role',
         'photo',
+        'reference_photo_url',
+        'face_registered',
     ];
 
     /**
@@ -47,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'face_registered' => 'boolean',
         ];
     }
 
