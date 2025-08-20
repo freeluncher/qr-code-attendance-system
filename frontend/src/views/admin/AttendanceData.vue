@@ -275,7 +275,7 @@
               <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                 <button
                   @click="previousPage"
-                  :disabled="pagination.current_page === 1"
+                  :disabled="!pagination || pagination.current_page === 1"
                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                 >
                   <ChevronLeftIcon class="h-5 w-5" />
@@ -286,7 +286,7 @@
                   @click="goToPage(page)"
                   :class="[
                     'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
-                    page === pagination.current_page
+                    page === (pagination?.current_page || 1)
                       ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                       : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                   ]"
@@ -295,7 +295,7 @@
                 </button>
                 <button
                   @click="nextPage"
-                  :disabled="pagination.current_page === pagination.last_page"
+                  :disabled="!pagination || pagination.current_page === pagination.last_page"
                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                 >
                   <ChevronRightIcon class="h-5 w-5" />
@@ -557,6 +557,10 @@ const selectedAll = computed(() => {
 })
 
 const paginationPages = computed(() => {
+  if (!pagination.value || !pagination.value.last_page) {
+    return []
+  }
+  
   const pages = []
   const start = Math.max(1, pagination.value.current_page - 2)
   const end = Math.min(pagination.value.last_page, pagination.value.current_page + 2)
