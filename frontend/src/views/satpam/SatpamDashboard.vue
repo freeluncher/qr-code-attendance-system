@@ -426,8 +426,8 @@ const loadData = async () => {
       id: attendance.id,
       date: attendance.formatted_date,
       location: attendance.location,
-      checkIn: attendance.check_in_time || '-',
-      checkOut: attendance.check_out_time || '-',
+      checkIn: attendance.scanned_at || '-',
+      checkOut: '-', // Check out functionality not implemented yet
       status: attendance.status_label,
       statusClass: attendance.status === 'tepat_waktu'
         ? 'bg-green-100 text-green-800'
@@ -438,9 +438,7 @@ const loadData = async () => {
       iconColor: attendance.status === 'tepat_waktu'
         ? 'text-green-600'
         : 'text-red-600'
-    }))
-
-    // Mock current shift and location (could come from API)
+    }))    // Mock current shift and location (could come from API)
     currentShift.value = {
       name: 'Shift Pagi',
       start_time: '08:00',

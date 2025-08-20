@@ -8,6 +8,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\DashboardController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -37,10 +38,24 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
     // Attendance (Presensi/Absensi)
     Route::resource('/attendances', AttendanceController::class)->except(['create', 'edit', 'update', 'destroy']);
 
+    // Dashboard Statistics for Admin
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/stats', [DashboardController::class, 'adminStats']);
+        Route::get('/activities', [DashboardController::class, 'recentActivities']);
+        Route::get('/late-employees', [DashboardController::class, 'topLateEmployees']);
+        Route::get('/attendance-chart', [DashboardController::class, 'attendanceChart']);
     });
 
-    // Route presensi untuk satpam
-    Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
-        Route::post('/attendances', [App\Http\Controllers\AttendanceController::class, 'store']);
+});
+
+// Routes for Satpam
+Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
+    // Presensi
+    Route::post('/attendances', [AttendanceController::class, 'store']);
+
+    // Dashboard Statistics for Satpam
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/my-stats', [DashboardController::class, 'satpamStats']);
+        Route::get('/my-history', [DashboardController::class, 'satpamHistory']);
     });
-    // Jika ingin satpam bisa presensi, bisa buka akses POST attendances untuk role satpam di group middleware lain.
+});
