@@ -206,6 +206,26 @@ class SatpamController extends Controller
 
         $now = Carbon::now();
 
+        // Validate location radius if coordinates are provided
+        if ($request->latitude && $request->longitude) {
+            $distance = $this->calculateDistance(
+                $request->latitude,
+                $request->longitude,
+                $qrCode->location->latitude,
+                $qrCode->location->longitude
+            );
+
+            // Check if distance is within 30 meters radius
+            if ($distance > 30) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Anda berada {$distance}m dari lokasi. Harap mendekati lokasi presensi (maksimal 30m)"
+                ], 400);
+            }
+        } else {
+            $distance = null;
+        }
+
         if ($existingAttendance) {
             // If already checked in and no check_out time, this is a check-out
             if (!$existingAttendance->check_out_time) {
@@ -213,6 +233,13 @@ class SatpamController extends Controller
                     'check_out_time' => $now,
                     'check_out_latitude' => $request->latitude,
                     'check_out_longitude' => $request->longitude,
+                ]);
+
+                // Create audit log for check-out
+                \App\Models\AttendanceAudit::create([
+                    'attendance_id' => $existingAttendance->id,
+                    'action' => 'check_out',
+                    'description' => "Check-out at {$qrCode->location->name}. Distance: " . ($distance ? "{$distance}m" : 'unknown') . ". Coordinates: {$request->latitude}, {$request->longitude}"
                 ]);
 
                 // Calculate work duration
@@ -251,7 +278,15 @@ class SatpamController extends Controller
             'scanned_at' => $now,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'distance' => $distance,
             'status' => $status
+        ]);
+
+        // Create audit log for check-in
+        \App\Models\AttendanceAudit::create([
+            'attendance_id' => $attendance->id,
+            'action' => 'check_in',
+            'description' => "Check-in at {$qrCode->location->name}. Distance: " . ($distance ? "{$distance}m" : 'unknown') . ". Coordinates: {$request->latitude}, {$request->longitude}. Status: {$status}"
         ]);
 
         // Increment scan count
@@ -432,5 +467,23 @@ class SatpamController extends Controller
         } else {
             return "{$minutes} menit";
         }
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     * Returns distance in meters
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // Earth radius in meters
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $distance = $earthRadius * $c;
+
+        return round($distance, 1); // Return distance rounded to 1 decimal place
     }
 }
