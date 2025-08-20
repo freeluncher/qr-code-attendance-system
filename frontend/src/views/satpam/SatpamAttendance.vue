@@ -286,13 +286,16 @@
     </main>
 
     <!-- Success Modal -->
-    <div v-if="showSuccessModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
+    <Transition name="modal">
+      <div v-if="showSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Overlay -->
+        <div
+          class="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+          @click="closeSuccessModal"
+        ></div>
 
-        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+        <!-- Modal Content -->
+        <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6 transform transition-all duration-300 scale-100">
           <div class="text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
               <CheckCircleIcon class="h-6 w-6 text-green-600" />
@@ -303,25 +306,33 @@
             <p class="text-sm text-gray-500 mb-4">
               {{ successMessage.description }}
             </p>
-            <button
-              @click="closeSuccessModal"
-              class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              OK
-            </button>
+            <div class="flex flex-col space-y-3">
+              <button
+                @click="closeSuccessModal"
+                class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                OK
+              </button>
+              <div v-if="autoCloseCountdown > 0" class="text-xs text-gray-500">
+                <span>Auto tutup dalam {{ autoCloseCountdown }} detik</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Error Modal -->
-    <div v-if="showErrorModal" class="fixed inset-0 z-50 overflow-y-auto">
-      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-          <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
+    <Transition name="modal">
+      <div v-if="showErrorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Overlay -->
+        <div
+          class="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+          @click="closeErrorModal"
+        ></div>
 
-        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+        <!-- Modal Content -->
+        <div class="relative bg-white rounded-lg shadow-xl max-w-sm w-full p-6 transform transition-all duration-300 scale-100">
           <div class="text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
               <ExclamationTriangleIcon class="h-6 w-6 text-red-600" />
@@ -341,7 +352,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -393,6 +404,7 @@ const showSuccessModal = ref(false)
 const showErrorModal = ref(false)
 const successMessage = ref({ title: '', description: '' })
 const errorMessage = ref({ title: '', description: '' })
+const autoCloseCountdown = ref(0)
 
 // Methods
 const formatTime = (date) => {
@@ -632,19 +644,69 @@ const processQRCode = async (qrData = null) => {
 const showSuccess = (title, description) => {
   successMessage.value = { title, description }
   showSuccessModal.value = true
+  autoCloseCountdown.value = 3
+
+  // Prevent body scrolling
+  document.body.style.overflow = 'hidden'
+
+  // Countdown timer
+  const countdownTimer = setInterval(() => {
+    autoCloseCountdown.value--
+    if (autoCloseCountdown.value <= 0) {
+      clearInterval(countdownTimer)
+      if (showSuccessModal.value) {
+        closeSuccessModal()
+      }
+    }
+  }, 1000)
+  modalTimers.push(countdownTimer)
 }
 
 const showError = (title, description) => {
   errorMessage.value = { title, description }
   showErrorModal.value = true
+
+  // Prevent body scrolling
+  document.body.style.overflow = 'hidden'
+
+  // Auto dismiss after 5 seconds
+  const timer = setTimeout(() => {
+    if (showErrorModal.value) {
+      closeErrorModal()
+    }
+  }, 5000)
+  modalTimers.push(timer)
 }
 
 const closeSuccessModal = () => {
   showSuccessModal.value = false
+  successMessage.value = { title: '', description: '' }
+  autoCloseCountdown.value = 0
+
+  // Restore body scrolling
+  document.body.style.overflow = 'auto'
+
+  // Clear any pending timers for this modal
+  modalTimers.forEach(timer => {
+    clearTimeout(timer)
+    clearInterval(timer)
+  })
+  modalTimers = []
 }
 
 const closeErrorModal = () => {
   showErrorModal.value = false
+  errorMessage.value = { title: '', description: '' }
+
+  // Restore body scrolling
+  document.body.style.overflow = 'auto'
+
+  // Clear any pending timers for this modal
+  modalTimers.forEach(timer => {
+    clearTimeout(timer)
+    clearInterval(timer)
+  })
+  modalTimers = []
 }
 
 const loadTodayAttendance = async () => {
@@ -702,12 +764,26 @@ const startLocationTracking = () => {
 
 // Timer for current time
 let timeInterval = null
+let modalTimers = []
+
+const handleEscapeKey = (event) => {
+  if (event.key === 'Escape') {
+    if (showSuccessModal.value) {
+      closeSuccessModal()
+    } else if (showErrorModal.value) {
+      closeErrorModal()
+    }
+  }
+}
 
 onMounted(() => {
   // Start time update
   timeInterval = setInterval(() => {
     currentTime.value = new Date()
   }, 1000)
+
+  // Add escape key listener
+  document.addEventListener('keydown', handleEscapeKey)
 
   // Load data
   loadTodayAttendance()
@@ -722,5 +798,42 @@ onUnmounted(() => {
   if (cameraActive.value) {
     stopCamera()
   }
+  // Remove escape key listener
+  document.removeEventListener('keydown', handleEscapeKey)
+
+  // Clear any pending modal timers
+  modalTimers.forEach(timer => {
+    clearTimeout(timer)
+    clearInterval(timer)
+  })
+  modalTimers = []
+
+  // Restore body scrolling if modals are open
+  if (showSuccessModal.value || showErrorModal.value) {
+    document.body.style.overflow = 'auto'
+  }
 })
 </script>
+
+<style scoped>
+/* Modal transition animations */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .relative,
+.modal-leave-active .relative {
+  transition: transform 0.3s ease;
+}
+
+.modal-enter-from .relative,
+.modal-leave-to .relative {
+  transform: scale(0.95) translateY(-20px);
+}
+</style>
