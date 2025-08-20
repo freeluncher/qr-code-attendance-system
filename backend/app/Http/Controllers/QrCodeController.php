@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use App\Services\QrCodeService;
-
+use PhpParser\Node\Stmt\TryCatch;
 class QrCodeController extends Controller
 {
     protected $qrCodeService;
@@ -23,8 +24,14 @@ class QrCodeController extends Controller
 
     public function show($id)
     {
-        $qrcode = $this->qrCodeService->getQrCodeById($id);
-        return response()->json($qrcode);
+        try {
+            $qrcode = $this->qrCodeService->getQrCodeById($id);
+            return response()->json($qrcode);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'QR Code not found.'], 404);
+        }
+
+
     }
 
     public function store(Request $request)
@@ -61,6 +68,6 @@ class QrCodeController extends Controller
     public function destroy($id)
     {
         $this->qrCodeService->deleteQrCode($id);
-        return response()->json(['message' => 'QR Code deleted successfully.'], 204);
+        return response()->json(['message' => 'QR Code deleted successfully.'], 200);
     }
 }

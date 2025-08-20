@@ -12,7 +12,7 @@ class QrCodeRepository
 
     public function findQrCodeById($id)
     {
-        return QrCode::with(['location', 'shift'])->find($id);
+        return QrCode::with(['location', 'shift'])->findOrFail($id);
     }
 
     public function createQrCode(array $data)
