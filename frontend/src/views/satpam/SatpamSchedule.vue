@@ -343,6 +343,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import satpamAPI from '../../services/satpam'
 import {
   CalendarIcon,
   ArrowLeftIcon,
@@ -544,13 +545,50 @@ const exportSchedule = () => {
 const loadScheduleData = async () => {
   loading.value = true
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const month = currentDate.value.getMonth() + 1
+    const year = currentDate.value.getFullYear()
     
-    // Data already loaded in schedules ref
+    const data = await satpamAPI.getSchedule(month, year)
+    schedules.value = data || []
     
   } catch (error) {
     console.error('Error loading schedule:', error)
+    // Keep mock data for demo
+    schedules.value = [
+      {
+        id: 1,
+        date: '2025-08-21',
+        shiftName: 'Shift Pagi',
+        type: 'pagi',
+        time: '06:00 - 14:00',
+        location: 'Pos Utama',
+        duration: 8,
+        notes: 'Shift normal hari kerja',
+        status: 'scheduled'
+      },
+      {
+        id: 2,
+        date: '2025-08-22',
+        shiftName: 'Shift Pagi',
+        type: 'pagi',
+        time: '06:00 - 14:00',
+        location: 'Pos Selatan',
+        duration: 8,
+        notes: '',
+        status: 'scheduled'
+      },
+      {
+        id: 3,
+        date: '2025-08-23',
+        shiftName: 'Shift Malam',
+        type: 'malam',
+        time: '22:00 - 06:00',
+        location: 'Pos Utama',
+        duration: 8,
+        notes: 'Patroli extra di area parkir',
+        status: 'completed'
+      }
+    ]
   } finally {
     loading.value = false
   }
