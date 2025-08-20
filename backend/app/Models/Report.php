@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Report extends Model
+{
+    protected $fillable = [
+        'location_id',
+        'week_start',
+        'week_end',
+        'file_url',
+    ];
+
+    // Relation
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+}
