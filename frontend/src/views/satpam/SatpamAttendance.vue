@@ -130,7 +130,7 @@
 
               <div class="space-y-3">
                 <button
-                  @click="processQRCode"
+                  @click="processQRCode()"
                   :disabled="!manualQrCode.trim() || processing"
                   class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
@@ -533,13 +533,43 @@ const processQRCode = async (qrData = null) => {
   }
 
   processing.value = true
-  const qrCode = qrData || manualQrCode.value.trim()
+
+  // Handle event object passed accidentally
+  let qrCode = qrData
+  if (qrData && typeof qrData === 'object' && qrData.target !== undefined) {
+    // This is an event object, ignore it and use manual input
+    qrCode = null
+  }
+
+  qrCode = qrCode || manualQrCode.value.trim()
 
   if (!qrCode) {
     showError('QR Code Kosong', 'Mohon masukkan kode QR.')
     processing.value = false
     return
   }
+
+  // If qrCode is a JSON string, parse it to get the actual code
+  try {
+    if (typeof qrCode === 'string' && (qrCode.startsWith('{') || qrCode.includes('code'))) {
+      const parsedData = JSON.parse(qrCode)
+      if (parsedData.code) {
+        qrCode = parsedData.code
+      }
+    }
+  } catch (error) {
+    // If parsing fails, use the original qrCode value
+    console.log('QR Code is not JSON, using as string:', qrCode)
+  }
+
+  // Ensure qrCode is a string and not an object representation
+  if (typeof qrCode !== 'string' || qrCode.includes('[object')) {
+    showError('QR Code Tidak Valid', 'Format QR code tidak valid. Mohon coba lagi.')
+    processing.value = false
+    return
+  }
+
+  console.log('Processing QR Code:', qrCode)
 
   try {
     // Get current location

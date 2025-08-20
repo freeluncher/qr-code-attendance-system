@@ -136,6 +136,9 @@
                   Shift
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Scan Count
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Expires At
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -174,6 +177,10 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {{ qrCode.shift?.name || 'N/A' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ qrCode.scan_count || 0 }}</div>
+                  <div class="text-xs text-gray-500">kali digunakan</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm text-gray-900">{{ formatDateTime(qrCode.expires_at) }}</div>
@@ -379,6 +386,10 @@
                 <div>
                   <span class="font-medium text-gray-600">Shift:</span>
                   <span class="ml-2 text-gray-900">{{ selectedQrCode.shift?.name || 'N/A' }}</span>
+                </div>
+                <div>
+                  <span class="font-medium text-gray-600">Scan Count:</span>
+                  <span class="ml-2 text-gray-900">{{ selectedQrCode.scan_count || 0 }} kali</span>
                 </div>
                 <div>
                   <span class="font-medium text-gray-600">Expires:</span>

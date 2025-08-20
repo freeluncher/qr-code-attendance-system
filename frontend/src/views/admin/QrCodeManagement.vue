@@ -19,6 +19,26 @@
 
           <!-- User Menu -->
           <div class="flex items-center space-x-2 sm:space-x-4">
+            <button
+              @click="autoRefreshEnabled = !autoRefreshEnabled"
+              :class="[
+                'p-1 rounded-lg text-xs px-2 py-1 font-medium transition-colors',
+                autoRefreshEnabled
+                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              ]"
+              :title="autoRefreshEnabled ? 'Auto-refresh aktif (30 detik)' : 'Auto-refresh nonaktif'"
+            >
+              {{ autoRefreshEnabled ? 'Auto' : 'Manual' }}
+            </button>
+            <button
+              @click="loadQrCodes"
+              :disabled="loading"
+              class="text-gray-400 hover:text-gray-600 disabled:opacity-50 p-1 rounded-lg hover:bg-gray-100"
+              title="Refresh Data"
+            >
+              <ArrowPathIcon :class="['h-5 w-5', { 'animate-spin': loading }]" />
+            </button>
             <router-link to="/admin/dashboard" class="text-gray-400 hover:text-gray-600">
               <ArrowLeftIcon class="h-5 w-5" />
             </router-link>
@@ -36,7 +56,13 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
           <h2 class="text-2xl font-bold text-gray-900">Kelola QR Code</h2>
-          <p class="text-gray-600 mt-1">Generate dan kelola QR code untuk presensi</p>
+          <div class="flex items-center space-x-4 mt-1">
+            <p class="text-gray-600">Generate dan kelola QR code untuk presensi</p>
+            <div v-if="lastUpdated" class="text-xs text-gray-500 flex items-center space-x-1">
+              <span>•</span>
+              <span>Terakhir diperbarui: {{ formatTime(lastUpdated) }}</span>
+            </div>
+          </div>
         </div>
         <button
           @click="openCreateModal"
@@ -179,7 +205,12 @@
               </div>
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-500">Scan Count:</span>
-                <span class="font-medium text-gray-900">{{ qrCode.scan_count || 0 }}</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-medium text-gray-900">{{ qrCode.scan_count || 0 }}</span>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ (qrCode.scan_count || 0) > 0 ? 'Aktif' : 'Belum digunakan' }}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -234,6 +265,20 @@
               <option value="">Pilih Lokasi</option>
               <option v-for="location in locations" :key="location.id" :value="location.id">
                 {{ location.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Shift</label>
+            <select
+              v-model="createForm.shift_id"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+            >
+              <option value="">Pilih Shift</option>
+              <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
+                {{ shift.name }} ({{ shift.start_time }} - {{ shift.end_time }})
               </option>
             </select>
           </div>
@@ -350,8 +395,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import api, { qrCodeAPI } from '../../services/api'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { qrCodeAPI, locationAPI, shiftAPI } from '../../services/api'
 import {
   AcademicCapIcon,
   QrCodeIcon,
@@ -362,7 +407,8 @@ import {
   TrashIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
 // Reactive state
@@ -376,15 +422,22 @@ const searchQuery = ref('')
 const locationFilter = ref('')
 const statusFilter = ref('')
 
+// Auto refresh
+const autoRefreshInterval = ref(null)
+const autoRefreshEnabled = ref(true)
+const lastUpdated = ref(null)
+
 // Data
 const qrCodes = ref([])
 const locations = ref([])
+const shifts = ref([])
 const viewingQrCode = ref(null)
 const qrCodeToDelete = ref(null)
 
 // Create form
 const createForm = ref({
   location_id: '',
+  shift_id: '',
   duration_days: '30'
 })
 
@@ -418,6 +471,7 @@ const loadQrCodes = async () => {
   try {
     const response = await qrCodeAPI.getQrCodes()
     qrCodes.value = response.data
+    lastUpdated.value = new Date()
     console.log('QR Codes loaded:', qrCodes.value)
   } catch (error) {
     console.error('Error loading QR codes:', error)
@@ -428,9 +482,30 @@ const loadQrCodes = async () => {
   }
 }
 
+// Auto refresh functionality
+const startAutoRefresh = () => {
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+  }
+
+  // Refresh every 30 seconds
+  autoRefreshInterval.value = setInterval(async () => {
+    if (autoRefreshEnabled.value && !loading.value && !showCreateModal.value && !showViewModal.value && !showDeleteModal.value) {
+      await loadQrCodes()
+    }
+  }, 30000)
+}
+
+const stopAutoRefresh = () => {
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+    autoRefreshInterval.value = null
+  }
+}
+
 const loadLocations = async () => {
   try {
-    const response = await api.get('/locations')
+    const response = await locationAPI.getLocations()
     locations.value = response.data
   } catch (error) {
     console.error('Error loading locations:', error)
@@ -443,6 +518,21 @@ const loadLocations = async () => {
   }
 }
 
+const loadShifts = async () => {
+  try {
+    const response = await shiftAPI.getShifts()
+    shifts.value = response.data
+  } catch (error) {
+    console.error('Error loading shifts:', error)
+    // Fallback data
+    shifts.value = [
+      { id: 1, name: 'Pagi', start_time: '06:00', end_time: '14:00' },
+      { id: 2, name: 'Siang', start_time: '14:00', end_time: '22:00' },
+      { id: 3, name: 'Malam', start_time: '22:00', end_time: '06:00' }
+    ]
+  }
+}
+
 const openCreateModal = () => {
   showCreateModal.value = true
 }
@@ -451,6 +541,7 @@ const closeCreateModal = () => {
   showCreateModal.value = false
   createForm.value = {
     location_id: '',
+    shift_id: '',
     duration_days: '30'
   }
 }
@@ -458,12 +549,25 @@ const closeCreateModal = () => {
 const generateQrCode = async () => {
   generating.value = true
   try {
-    await qrCodeAPI.createQrCode(createForm.value)
+    // Prepare data for API
+    const qrCodeData = {
+      location_id: createForm.value.location_id,
+      shift_id: createForm.value.shift_id
+    }
+
+    // Convert duration_days to expires_at if provided
+    if (createForm.value.duration_days) {
+      const now = new Date()
+      const expiresAt = new Date(now.getTime() + (parseInt(createForm.value.duration_days) * 24 * 60 * 60 * 1000))
+      qrCodeData.expires_at = expiresAt.toISOString()
+    }
+
+    await qrCodeAPI.createQrCode(qrCodeData)
     closeCreateModal()
     await loadQrCodes()
   } catch (error) {
     console.error('Error generating QR code:', error)
-    alert('Gagal generate QR code')
+    alert('Gagal generate QR code: ' + (error.message || 'Unknown error'))
   } finally {
     generating.value = false
   }
@@ -548,10 +652,24 @@ const formatDate = (dateString) => {
   })
 }
 
+const formatTime = (date) => {
+  return date.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
 // Lifecycle
 onMounted(() => {
   loadQrCodes()
   loadLocations()
+  loadShifts()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
