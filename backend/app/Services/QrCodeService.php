@@ -21,7 +21,7 @@ class QrCodeService{
     public function getQrCodeById($id)
     {
         $qrCode = $this->qrCodeRepository->findQrCodeById($id);
-        
+
         // Generate QR Code image if requested
         $qrCodeData = [
             'id' => $qrCode->id,
@@ -30,15 +30,15 @@ class QrCodeService{
             'shift_id' => $qrCode->shift_id,
             'expires_at' => $qrCode->expires_at,
         ];
-        
-        $qrCodeImage = QrCode::format('png')
+
+        $qrCodeImage = QrCode::format('svg')
             ->size(300)
             ->margin(10)
             ->generate(json_encode($qrCodeData));
-            
+
         // Convert to base64 for easy frontend display
-        $qrCode->qr_image = 'data:image/png;base64,' . base64_encode($qrCodeImage);
-        
+        $qrCode->qr_image = 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
+
         return $qrCode;
     }
 
@@ -53,7 +53,7 @@ class QrCodeService{
         }
 
         $qrCode = $this->qrCodeRepository->createQrCode($data);
-        
+
         // Generate QR Code image as base64
         $qrCodeData = [
             'id' => $qrCode->id,
@@ -62,15 +62,15 @@ class QrCodeService{
             'shift_id' => $qrCode->shift_id,
             'expires_at' => $qrCode->expires_at,
         ];
-        
-        $qrCodeImage = QrCode::format('png')
+
+        $qrCodeImage = QrCode::format('svg')
             ->size(300)
             ->margin(10)
             ->generate(json_encode($qrCodeData));
-            
+
         // Convert to base64 for easy frontend display
-        $qrCode->qr_image = 'data:image/png;base64,' . base64_encode($qrCodeImage);
-        
+        $qrCode->qr_image = 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
+
         return $qrCode;
     }
 
@@ -100,13 +100,13 @@ class QrCodeService{
             'shift_id' => $qrCode->shift_id,
             'expires_at' => $qrCode->expires_at,
         ];
-        
-        $qrCodeImage = QrCode::format('png')
+
+        $qrCodeImage = QrCode::format('svg')
             ->size($size)
             ->margin(10)
             ->generate(json_encode($qrCodeData));
-            
-        return 'data:image/png;base64,' . base64_encode($qrCodeImage);
+
+        return 'data:image/svg+xml;base64,' . base64_encode($qrCodeImage);
     }
 
 }

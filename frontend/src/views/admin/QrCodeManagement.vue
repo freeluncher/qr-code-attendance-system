@@ -418,33 +418,11 @@ const loadQrCodes = async () => {
   try {
     const response = await qrCodeAPI.getQrCodes()
     qrCodes.value = response.data
+    console.log('QR Codes loaded:', qrCodes.value)
   } catch (error) {
     console.error('Error loading QR codes:', error)
-    // Fallback data for development
-    qrCodes.value = [
-      {
-        id: 1,
-        code: 'qr_12345abcdef67890',
-        location_id: 1,
-        location: { id: 1, name: 'Pos Utara' },
-        created_at: '2025-01-15T00:00:00Z',
-        expires_at: '2025-02-15T00:00:00Z',
-        is_expired: false,
-        scan_count: 45,
-        qr_image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-      },
-      {
-        id: 2,
-        code: 'qr_abcdef1234567890',
-        location_id: 2,
-        location: { id: 2, name: 'Pos Selatan' },
-        created_at: '2025-01-10T00:00:00Z',
-        expires_at: '2025-01-20T00:00:00Z',
-        is_expired: true,
-        scan_count: 23,
-        qr_image: null
-      }
-    ]
+    // Show error message to user instead of fallback data
+    alert('Error loading QR codes: ' + (error.message || 'Unknown error'))
   } finally {
     loading.value = false
   }
@@ -491,9 +469,21 @@ const generateQrCode = async () => {
   }
 }
 
-const showQrCode = (qrCode) => {
-  viewingQrCode.value = qrCode
-  showViewModal.value = true
+const showQrCode = async (qrCode) => {
+  try {
+    // Load QR code with image if not already present
+    if (!qrCode.qr_image) {
+      const response = await qrCodeAPI.getQrCodeImage(qrCode.id)
+      qrCode.qr_image = response.qr_image
+    }
+    viewingQrCode.value = qrCode
+    showViewModal.value = true
+  } catch (error) {
+    console.error('Error loading QR code image:', error)
+    // Still show the modal even if image fails to load
+    viewingQrCode.value = qrCode
+    showViewModal.value = true
+  }
 }
 
 const closeViewModal = () => {

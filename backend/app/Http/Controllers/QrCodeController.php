@@ -95,7 +95,7 @@ class QrCodeController extends Controller
         try {
             $qrcode = $this->qrCodeService->getQrCodeById($id);
             $qrImage = $this->qrCodeService->generateQrCodeImage($qrcode);
-            
+
             return response()->json([
                 'qr_image' => $qrImage,
                 'qrcode' => $qrcode,

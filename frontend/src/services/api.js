@@ -83,7 +83,8 @@ export const qrCodeAPI = {
   createQrCode: (qrCodeData) => api.post('/qrcodes', qrCodeData),
   updateQrCode: (id, qrCodeData) => api.patch(`/qrcodes/${id}`, qrCodeData),
   deleteQrCode: (id) => api.delete(`/qrcodes/${id}`),
-  renewQrCode: (id, renewData) => api.post(`/qrcodes/${id}/renew`, renewData)
+  renewQrCode: (id, renewData) => api.post(`/qrcodes/${id}/renew`, renewData),
+  getQrCodeImage: (id) => api.get(`/qrcodes/${id}/image`)
 }
 
 // Attendance API endpoints
