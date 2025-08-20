@@ -33,7 +33,12 @@ class LocationController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'unique:locations,name,NULL,id,latitude,' . $request->latitude . ',longitude,' . $request->longitude
+            ],
             'address' => 'required|string|max:255',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
@@ -49,7 +54,13 @@ class LocationController extends Controller
     public function update(Request $request, $id)
     {
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+                'unique:locations,name,' . $id . ',id,latitude,' . $request->latitude . ',longitude,' . $request->longitude
+            ],
             'address' => 'sometimes|required|string|max:255',
             'latitude' => 'sometimes|required|numeric',
             'longitude' => 'sometimes|required|numeric',
