@@ -227,6 +227,9 @@ class SatpamController extends Controller
             'status' => 'on_time' // default status, could be calculated based on time
         ]);
 
+        // Increment scan count
+        $qrCode->increment('scan_count');
+
         return response()->json([
             'success' => true,
             'message' => 'Presensi berhasil',

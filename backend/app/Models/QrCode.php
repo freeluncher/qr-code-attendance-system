@@ -13,6 +13,7 @@ class QrCode extends Model
         'shift_id',
         'code',
         'expires_at',
+        'scan_count',
     ];
 
     public function location(){
