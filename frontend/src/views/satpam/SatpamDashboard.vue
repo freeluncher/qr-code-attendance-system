@@ -1,0 +1,438 @@
+<template>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo and Title -->
+          <div class="flex items-center">
+            <div class="flex items-center">
+              <ShieldCheckIcon class="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <h1 class="text-xl font-semibold text-gray-900">QR Attendance System</h1>
+                <p class="text-sm text-gray-500">Dashboard Satpam</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Menu -->
+          <div class="flex items-center space-x-4">
+            <BellIcon class="h-6 w-6 text-gray-400 hover:text-gray-600 cursor-pointer" />
+            <div class="flex items-center space-x-3">
+              <div class="text-right">
+                <p class="text-sm font-medium text-gray-900">{{ authStore.user?.name }}</p>
+                <p class="text-xs text-gray-500">Satpam</p>
+              </div>
+              <div class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+                <UserIcon class="h-6 w-6 text-white" />
+              </div>
+              <button @click="handleLogout" class="text-gray-400 hover:text-gray-600">
+                <ArrowRightOnRectangleIcon class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Welcome Banner -->
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 mb-8 text-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold mb-2">Selamat datang, {{ authStore.user?.name }}!</h2>
+            <p class="text-blue-100">{{ getCurrentGreeting() }} - {{ formatDate(new Date()) }}</p>
+            <p class="text-sm text-blue-100 mt-1">Shift: {{ currentShift?.name || 'Belum ada shift aktif' }}</p>
+          </div>
+          <div class="text-right">
+            <div class="text-3xl font-bold">{{ currentTime }}</div>
+            <div class="text-blue-100">{{ formatDate(new Date()) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Today's Attendance -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <CheckCircleIcon class="h-8 w-8 text-green-600" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Presensi Hari Ini</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ todayStats.attendance }}</p>
+              <p class="text-xs text-gray-500">dari {{ todayStats.totalShifts }} shift</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- This Month Performance -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <ChartBarIcon class="h-8 w-8 text-blue-600" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Performa Bulan Ini</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ monthStats.percentage }}%</p>
+              <p class="text-xs text-gray-500">{{ monthStats.onTime }} tepat waktu</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <ClockIcon class="h-8 w-8" :class="getStatusColor()" />
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Status Saat Ini</p>
+              <p class="text-2xl font-semibold" :class="getStatusTextColor()">{{ getCurrentStatus() }}</p>
+              <p class="text-xs text-gray-500">{{ getStatusDescription() }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Actions -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- QR Attendance -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Presensi QR Code</h3>
+            <p class="text-sm text-gray-500 mt-1">Scan QR Code untuk melakukan presensi</p>
+          </div>
+          <div class="p-6">
+            <div class="text-center">
+              <div class="mx-auto h-24 w-24 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                <QrCodeIcon class="h-12 w-12 text-blue-600" />
+              </div>
+              <button
+                @click="openQRScanner"
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <QrCodeIcon class="h-5 w-5 mr-2" />
+                Scan QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Location & Shift -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Informasi Shift</h3>
+            <p class="text-sm text-gray-500 mt-1">Detail shift dan lokasi saat ini</p>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div class="flex items-start">
+                <MapPinIcon class="h-5 w-5 text-gray-400 mt-0.5 mr-3" />
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Lokasi</p>
+                  <p class="text-sm text-gray-600">{{ currentLocation?.name || 'Belum ada lokasi' }}</p>
+                  <p class="text-xs text-gray-500">{{ currentLocation?.address || '' }}</p>
+                </div>
+              </div>
+              <div class="flex items-start">
+                <ClockIcon class="h-5 w-5 text-gray-400 mt-0.5 mr-3" />
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Jam Shift</p>
+                  <p class="text-sm text-gray-600">
+                    {{ currentShift ? `${currentShift.start_time} - ${currentShift.end_time}` : 'Belum ada shift aktif' }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start">
+                <InformationCircleIcon class="h-5 w-5 text-gray-400 mt-0.5 mr-3" />
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Catatan</p>
+                  <p class="text-sm text-gray-600">{{ currentShift?.notes || 'Tidak ada catatan khusus' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activities -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+        <div class="p-6 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Riwayat Presensi Terakhir</h3>
+          <p class="text-sm text-gray-500 mt-1">7 hari terakhir</p>
+        </div>
+        <div class="p-6">
+          <div class="space-y-4">
+            <div v-for="(record, index) in recentAttendance" :key="index" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="h-10 w-10 rounded-full flex items-center justify-center" :class="record.statusBg">
+                    <component :is="record.icon" class="h-5 w-5" :class="record.iconColor" />
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-900">{{ record.date }}</p>
+                  <p class="text-xs text-gray-500">{{ record.location }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="flex items-center space-x-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">{{ record.checkIn || '-' }}</p>
+                    <p class="text-xs text-gray-500">Check In</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">{{ record.checkOut || '-' }}</p>
+                    <p class="text-xs text-gray-500">Check Out</p>
+                  </div>
+                  <div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="record.statusClass">
+                      {{ record.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">Aksi Cepat</h3>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              @click="viewSchedule"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <CalendarIcon class="h-6 w-6 text-blue-600 mr-3" />
+              <div class="text-left">
+                <p class="text-sm font-medium text-gray-900">Jadwal Shift</p>
+                <p class="text-xs text-gray-500">Lihat jadwal</p>
+              </div>
+            </button>
+
+            <button
+              @click="viewHistory"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <ClipboardDocumentListIcon class="h-6 w-6 text-green-600 mr-3" />
+              <div class="text-left">
+                <p class="text-sm font-medium text-gray-900">Riwayat</p>
+                <p class="text-xs text-gray-500">Presensi lengkap</p>
+              </div>
+            </button>
+
+            <button
+              @click="reportIssue"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <ExclamationTriangleIcon class="h-6 w-6 text-yellow-600 mr-3" />
+              <div class="text-left">
+                <p class="text-sm font-medium text-gray-900">Lapor Masalah</p>
+                <p class="text-xs text-gray-500">Kirim laporan</p>
+              </div>
+            </button>
+
+            <button
+              @click="viewProfile"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <UserCircleIcon class="h-6 w-6 text-purple-600 mr-3" />
+              <div class="text-left">
+                <p class="text-sm font-medium text-gray-900">Profil</p>
+                <p class="text-xs text-gray-500">Ubah profil</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
+import {
+  ShieldCheckIcon,
+  UserIcon,
+  BellIcon,
+  ArrowRightOnRectangleIcon,
+  CheckCircleIcon,
+  ChartBarIcon,
+  ClockIcon,
+  QrCodeIcon,
+  MapPinIcon,
+  InformationCircleIcon,
+  CalendarIcon,
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon,
+  UserCircleIcon
+} from '@heroicons/vue/24/outline'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Reactive data
+const currentTime = ref('')
+const currentShift = ref(null)
+const currentLocation = ref(null)
+
+// Stats
+const todayStats = ref({
+  attendance: 2,
+  totalShifts: 3
+})
+
+const monthStats = ref({
+  percentage: 92,
+  onTime: 27
+})
+
+// Recent attendance records
+const recentAttendance = ref([
+  {
+    date: 'Hari ini, 19 Agustus 2025',
+    location: 'Pos Utama',
+    checkIn: '08:00',
+    checkOut: '16:00',
+    status: 'Tepat Waktu',
+    statusClass: 'bg-green-100 text-green-800',
+    statusBg: 'bg-green-100',
+    icon: CheckCircleIcon,
+    iconColor: 'text-green-600'
+  },
+  {
+    date: 'Kemarin, 18 Agustus 2025',
+    location: 'Pos Timur',
+    checkIn: '08:15',
+    checkOut: '16:00',
+    status: 'Terlambat',
+    statusClass: 'bg-red-100 text-red-800',
+    statusBg: 'bg-red-100',
+    icon: ClockIcon,
+    iconColor: 'text-red-600'
+  }
+])
+
+// Methods
+const updateTime = () => {
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+const formatDate = (date) => {
+  return date.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const getCurrentGreeting = () => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Selamat pagi'
+  if (hour < 15) return 'Selamat siang'
+  if (hour < 18) return 'Selamat sore'
+  return 'Selamat malam'
+}
+
+const getCurrentStatus = () => {
+  const now = new Date()
+  const hour = now.getHours()
+
+  if (hour >= 8 && hour < 16) return 'Bertugas'
+  if (hour >= 16 && hour < 18) return 'Selesai Shift'
+  return 'Tidak Bertugas'
+}
+
+const getStatusColor = () => {
+  const status = getCurrentStatus()
+  if (status === 'Bertugas') return 'text-green-600'
+  if (status === 'Selesai Shift') return 'text-blue-600'
+  return 'text-gray-600'
+}
+
+const getStatusTextColor = () => {
+  const status = getCurrentStatus()
+  if (status === 'Bertugas') return 'text-green-900'
+  if (status === 'Selesai Shift') return 'text-blue-900'
+  return 'text-gray-900'
+}
+
+const getStatusDescription = () => {
+  const status = getCurrentStatus()
+  if (status === 'Bertugas') return 'Sedang dalam jam kerja'
+  if (status === 'Selesai Shift') return 'Shift telah selesai'
+  return 'Di luar jam kerja'
+}
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/login')
+}
+
+const openQRScanner = () => {
+  // Implement QR scanner functionality
+  alert('Fitur QR Scanner akan segera tersedia')
+}
+
+const viewSchedule = () => {
+  alert('Halaman jadwal shift akan segera tersedia')
+}
+
+const viewHistory = () => {
+  alert('Halaman riwayat presensi akan segera tersedia')
+}
+
+const reportIssue = () => {
+  alert('Fitur lapor masalah akan segera tersedia')
+}
+
+const viewProfile = () => {
+  alert('Halaman profil akan segera tersedia')
+}
+
+const loadData = async () => {
+  // Simulate loading data
+  currentShift.value = {
+    name: 'Shift Pagi',
+    start_time: '08:00',
+    end_time: '16:00',
+    notes: 'Shift normal hari kerja'
+  }
+
+  currentLocation.value = {
+    name: 'Pos Utama',
+    address: 'Gedung A, Lantai 1'
+  }
+}
+
+// Timer for clock
+let timeInterval = null
+
+onMounted(() => {
+  updateTime()
+  timeInterval = setInterval(updateTime, 1000)
+  loadData()
+})
+
+onUnmounted(() => {
+  if (timeInterval) {
+    clearInterval(timeInterval)
+  }
+})
+</script>
