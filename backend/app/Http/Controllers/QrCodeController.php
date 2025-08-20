@@ -89,4 +89,19 @@ class QrCodeController extends Controller
             'qrcode' => $qrcode,
         ]);
     }
+
+    public function generateImage($id)
+    {
+        try {
+            $qrcode = $this->qrCodeService->getQrCodeById($id);
+            $qrImage = $this->qrCodeService->generateQrCodeImage($qrcode);
+            
+            return response()->json([
+                'qr_image' => $qrImage,
+                'qrcode' => $qrcode,
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'QR Code not found.'], 404);
+        }
+    }
 }

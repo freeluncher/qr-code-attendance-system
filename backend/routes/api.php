@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
     // QrCode CRUD
     Route::resource('/qrcodes', QrCodeController::class)->except(['create', 'edit']);
     Route::post('/qrcodes/{id}/renew', [QrCodeController::class, 'renew']);
+    Route::get('/qrcodes/{id}/image', [QrCodeController::class, 'generateImage']);
 
     // Attendance (Presensi/Absensi)
     Route::resource('/attendances', AttendanceController::class)->except(['create', 'edit', 'update', 'destroy']);
