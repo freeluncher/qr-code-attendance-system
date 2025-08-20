@@ -4,7 +4,7 @@ namespace App\Repositories;
 use App\Models\User;
 use Illuminate\Support\Str;
 
-class UserRepository
+class AuthRepository
 {
     // Cari berdasarkan email atau username
     public function findByLogin($login)

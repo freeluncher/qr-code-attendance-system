@@ -1,23 +1,23 @@
 <?php
 namespace App\Services;
 
-use App\Repositories\UserRepository;
+use App\Repositories\AuthRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthService {
 
-    protected $userRepository;
+    protected $authRepository;
 
-    public function __construct(UserRepository $userRepository)
+    public function __construct(AuthRepository $authRepository)
     {
-        $this->userRepository = $userRepository;
+        $this->authRepository = $authRepository;
     }
 
     // Proses Login untuk admin dan satpam, email/username, return user & token
     public function login($login, $password)
     {
-        $user = $this->userRepository->findByLogin($login);
+        $user = $this->authRepository->findByLogin($login);
 
         if (!$user || !Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
@@ -44,7 +44,7 @@ class AuthService {
     public function register($data)
     {
         // Generate username dari nama
-        $username = $this->userRepository->generateUsername($data['name']);
+        $username = $this->authRepository->generateUsername($data['name']);
 
         $userData = [
             'name' => $data['name'],
@@ -55,7 +55,7 @@ class AuthService {
             'photo' => $data['photo'] ?? null,
         ];
 
-        return $this->userRepository->create($userData);
+        return $this->authRepository->create($userData);
     }
 
 }
