@@ -204,34 +204,73 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
             <textarea
               v-model="formData.address"
+              @blur="handleAddressChange"
               rows="2"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-              placeholder="Masukkan alamat lengkap"
+              placeholder="Contoh: Jl. Sudirman No. 1, Senayan, Jakarta Pusat, DKI Jakarta"
             ></textarea>
+            <p class="text-xs text-gray-500 mt-1">
+              💡 <strong>Tips:</strong> Gunakan alamat lengkap dengan nama jalan, kelurahan, dan kota untuk hasil terbaik
+            </p>
+            <p class="text-xs text-green-600 mt-1">
+              ✅ Koordinat akan diisi otomatis berdasarkan alamat
+            </p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-              <input
-                v-model="formData.latitude"
-                type="number"
-                step="any"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-                placeholder="-6.2088"
-              />
+              <div class="relative">
+                <input
+                  v-model="formData.latitude"
+                  type="number"
+                  step="any"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                  placeholder="-6.2088"
+                />
+                <div
+                  v-if="geocoding"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-              <input
-                v-model="formData.longitude"
-                type="number"
-                step="any"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-                placeholder="106.8456"
-              />
+              <div class="relative">
+                <input
+                  v-model="formData.longitude"
+                  type="number"
+                  step="any"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+                  placeholder="106.8456"
+                />
+                <div
+                  v-if="geocoding"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <!-- Manual Geocode Button -->
+          <div class="flex justify-between items-center">
+            <button
+              type="button"
+              @click="fetchCoordinatesManually"
+              :disabled="!formData.address || geocoding"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <MagnifyingGlassIcon class="h-4 w-4" />
+              <span>{{ geocoding ? 'Mencari...' : 'Cari Koordinat' }}</span>
+            </button>
+            <p class="text-xs text-gray-500">
+              Atau isi koordinat secara manual
+            </p>
           </div>
 
           <div>
@@ -301,6 +340,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '../../services/api'
+import geocodingAPI from '../../services/geocoding'
 import {
   AcademicCapIcon,
   MapPinIcon,
@@ -318,6 +358,7 @@ import {
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const geocoding = ref(false)
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const searchQuery = ref('')
@@ -450,6 +491,23 @@ const closeModal = () => {
 }
 
 const saveLocation = async () => {
+  // Validate coordinates before saving
+  if (formData.value.latitude && formData.value.longitude) {
+    const validation = geocodingAPI.validateCoordinates(
+      formData.value.latitude,
+      formData.value.longitude
+    )
+
+    if (!validation.isValid) {
+      alert('Koordinat tidak valid atau berada di luar Indonesia. Silakan periksa kembali.')
+      return
+    }
+
+    // Use validated coordinates
+    formData.value.latitude = validation.latitude
+    formData.value.longitude = validation.longitude
+  }
+
   saving.value = true
   try {
     if (editingLocation.value) {
@@ -464,7 +522,15 @@ const saveLocation = async () => {
     await loadLocations()
   } catch (error) {
     console.error('Error saving location:', error)
-    alert('Gagal menyimpan data lokasi')
+
+    // Handle specific error responses
+    if (error.response?.data?.error === 'GEOCODING_FAILED') {
+      alert('Tidak dapat menemukan koordinat untuk alamat tersebut. Silakan masukkan latitude dan longitude secara manual.')
+    } else if (error.response?.data?.error === 'INVALID_COORDINATES') {
+      alert('Koordinat tidak valid atau berada di luar Indonesia.')
+    } else {
+      alert('Gagal menyimpan data lokasi. Silakan coba lagi.')
+    }
   } finally {
     saving.value = false
   }
@@ -496,6 +562,105 @@ const formatDate = (dateString) => {
     month: 'long',
     day: 'numeric'
   })
+}
+
+// Auto-fetch coordinates when address changes
+const handleAddressChange = async () => {
+  if (formData.value.address && formData.value.address.length > 15) {
+    await fetchCoordinates()
+  }
+}
+
+// Fetch coordinates from address
+const fetchCoordinates = async () => {
+  if (!formData.value.address || formData.value.address.length < 10) {
+    console.log('📍 Address too short for geocoding:', formData.value.address)
+    return
+  }
+
+  geocoding.value = true
+  try {
+    console.log('🔍 Starting geocoding for:', formData.value.address)
+    const response = await geocodingAPI.getCoordinatesFromAddress(formData.value.address)
+
+    console.log('📡 Geocoding response (full):', response)
+    console.log('📡 Response.success:', response?.success)
+    console.log('📡 Response.data:', response?.data)
+
+    if (response && response.success && response.data) {
+      formData.value.latitude = response.data.latitude
+      formData.value.longitude = response.data.longitude
+
+      // Show success message briefly
+      console.log('✅ Koordinat berhasil ditemukan:', response.data)
+
+      // Optional: Show toast notification
+      // You can add a toast notification here if available
+
+    } else {
+      console.warn('⚠️ Geocoding response unsuccessful')
+      console.warn('⚠️ Response object:', response)
+      console.warn('⚠️ Response.success:', response?.success)
+      console.warn('⚠️ Response.data:', response?.data)
+
+      // Don't clear existing coordinates, just log warning
+      if (response && response.message) {
+        console.log('💡 Suggestion:', response.message)
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error fetching coordinates:', error)
+
+    // Handle specific errors
+    if (error.response?.status === 422) {
+      console.log('💡 Geocoding tips:', error.response.data?.suggestions)
+    }
+
+    // Don't show error to user in auto-fetch, just log it
+  } finally {
+    geocoding.value = false
+  }
+}// Manual fetch coordinates button
+const fetchCoordinatesManually = async () => {
+  if (!formData.value.address || formData.value.address.length < 5) {
+    alert('Silakan masukkan alamat terlebih dahulu')
+    return
+  }
+
+  geocoding.value = true
+  try {
+    console.log('🔍 Manual geocoding for:', formData.value.address)
+    const response = await geocodingAPI.getCoordinatesFromAddress(formData.value.address)
+
+    if (response && response.success && response.data) {
+      formData.value.latitude = response.data.latitude
+      formData.value.longitude = response.data.longitude
+
+      // Show success alert for manual fetch
+      alert(`✅ Koordinat ditemukan!\nLatitude: ${response.data.latitude}\nLongitude: ${response.data.longitude}`)
+
+    } else {
+      // Show user-friendly error for manual fetch
+      const message = response?.message || 'Tidak dapat menemukan koordinat untuk alamat tersebut'
+      alert(`⚠️ ${message}\n\nTips:\n• Pastikan alamat mencakup nama kota\n• Gunakan nama jalan yang lengkap\n• Coba tambahkan nama kelurahan/kecamatan`)
+    }
+  } catch (error) {
+    console.error('❌ Manual geocoding error:', error)
+
+    let errorMessage = 'Terjadi kesalahan saat mencari koordinat.'
+
+    if (error.response?.status === 422) {
+      errorMessage = error.response.data?.message || errorMessage
+    } else if (error.response?.status === 500) {
+      errorMessage = 'Server sedang bermasalah. Silakan coba lagi nanti.'
+    } else if (!navigator.onLine) {
+      errorMessage = 'Tidak ada koneksi internet. Periksa koneksi Anda.'
+    }
+
+    alert(`❌ ${errorMessage}`)
+  } finally {
+    geocoding.value = false
+  }
 }
 
 // Lifecycle

@@ -28,6 +28,7 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     // Location CRUD
+    Route::post('/geocode/address', [LocationController::class, 'geocode']);
     Route::resource('/locations', LocationController::class)->except(['create', 'edit']);
 
     //Shift CRUD

@@ -13,16 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
-            LocationSeeder::class,
-            ShiftSeeder::class,
-            QrCodeSeeder::class,
-            AttendanceSeeder::class,
-            AttendanceAuditSeeder::class,
-            NotificationSeeder::class,
-            ReportSeeder::class,
-            AiPredictionSeeder::class,
-        ]);
+        $this->call(UserCsvSeeder::class);
     }
 }

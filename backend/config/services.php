@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'locationiq' => [
+        'access_token' => env('LOCATIONIQ_ACCESS_TOKEN'),
+        'enabled' => env('GEOCODING_ENABLED', true),
+    ],
+
 ];

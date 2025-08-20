@@ -4,14 +4,18 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\LocationService;
+use App\Services\GeocodingService;
+use Illuminate\Support\Facades\Log;
 
 class LocationController extends Controller
 {
     protected $locationService;
+    protected $geocodingService;
 
-    public function __construct(LocationService $locationService)
+    public function __construct(LocationService $locationService, GeocodingService $geocodingService)
     {
         $this->locationService = $locationService;
+        $this->geocodingService = $geocodingService;
     }
 
     public function index(Request $request)
@@ -40,9 +44,32 @@ class LocationController extends Controller
                 'unique:locations,name,NULL,id,latitude,' . $request->latitude . ',longitude,' . $request->longitude
             ],
             'address' => 'required|string|max:255',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
+
+        // Auto-fill coordinates if not provided
+        if (empty($data['latitude']) || empty($data['longitude'])) {
+            $coordinates = $this->geocodingService->getCoordinatesFromAddress($data['address']);
+            if ($coordinates) {
+                $data['latitude'] = $coordinates['latitude'];
+                $data['longitude'] = $coordinates['longitude'];
+            } else {
+                return response()->json([
+                    'message' => 'Tidak dapat menemukan koordinat untuk alamat tersebut. Silakan masukkan latitude dan longitude secara manual.',
+                    'error' => 'GEOCODING_FAILED'
+                ], 422);
+            }
+        }
+
+        // Validate if coordinates are within Indonesia
+        if (!$this->geocodingService->validateIndonesianCoordinates($data['latitude'], $data['longitude'])) {
+            return response()->json([
+                'message' => 'Koordinat tidak valid atau berada di luar Indonesia.',
+                'error' => 'INVALID_COORDINATES'
+            ], 422);
+        }
+
         $location = $this->locationService->createLocation($data);
 
         return response()->json([
@@ -62,9 +89,29 @@ class LocationController extends Controller
                 'unique:locations,name,' . $id . ',id,latitude,' . $request->latitude . ',longitude,' . $request->longitude
             ],
             'address' => 'sometimes|required|string|max:255',
-            'latitude' => 'sometimes|required|numeric',
-            'longitude' => 'sometimes|required|numeric',
+            'latitude' => 'sometimes|nullable|numeric',
+            'longitude' => 'sometimes|nullable|numeric',
         ]);
+
+        // Auto-fill coordinates if address changed but coordinates not provided
+        if (isset($data['address']) && (empty($data['latitude']) || empty($data['longitude']))) {
+            $coordinates = $this->geocodingService->getCoordinatesFromAddress($data['address']);
+            if ($coordinates) {
+                $data['latitude'] = $coordinates['latitude'];
+                $data['longitude'] = $coordinates['longitude'];
+            }
+        }
+
+        // Validate coordinates if provided
+        if (isset($data['latitude']) && isset($data['longitude'])) {
+            if (!$this->geocodingService->validateIndonesianCoordinates($data['latitude'], $data['longitude'])) {
+                return response()->json([
+                    'message' => 'Koordinat tidak valid atau berada di luar Indonesia.',
+                    'error' => 'INVALID_COORDINATES'
+                ], 422);
+            }
+        }
+
         $location = $this->locationService->updateLocation($id, $data);
 
         return response()->json([
@@ -77,5 +124,56 @@ class LocationController extends Controller
     {
         $this->locationService->deleteLocation($id);
         return response()->json(['message' => 'Location deleted successfully']);
+    }
+
+    /**
+     * Get coordinates from address using geocoding API
+     */
+    public function geocode(Request $request)
+    {
+        $request->validate([
+            'address' => 'required|string|max:500'
+        ]);
+
+        Log::info('Geocoding request received', ['address' => $request->address]);
+
+        try {
+            $coordinates = $this->geocodingService->getCoordinatesFromAddress($request->address);
+
+            if (!$coordinates) {
+                Log::warning('Geocoding failed for address', ['address' => $request->address]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menemukan koordinat untuk alamat tersebut. Silakan coba alamat yang lebih spesifik.',
+                    'error' => 'GEOCODING_FAILED',
+                    'suggestions' => [
+                        'Pastikan alamat mencakup nama kota',
+                        'Gunakan nama jalan yang lengkap',
+                        'Coba tambahkan kode pos'
+                    ]
+                ], 422);
+            }
+
+            Log::info('Geocoding successful', ['address' => $request->address, 'coordinates' => $coordinates]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $coordinates,
+                'message' => 'Koordinat berhasil ditemukan.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Geocoding controller error', [
+                'address' => $request->address,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mencari koordinat.',
+                'error' => 'GEOCODING_ERROR'
+            ], 500);
+        }
     }
 }
