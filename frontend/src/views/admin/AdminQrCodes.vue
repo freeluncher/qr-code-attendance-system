@@ -14,7 +14,7 @@
               <p class="text-sm text-gray-500">Manajemen QR Code presensi</p>
             </div>
           </div>
-          
+
           <button
             @click="showCreateModal = true"
             class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center"
@@ -41,7 +41,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-blue-100">
@@ -53,7 +53,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-yellow-100">
@@ -65,7 +65,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-purple-100">
@@ -266,7 +266,7 @@
     <div v-if="showCreateModal || showEditModal" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="closeModal"></div>
-        
+
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form @submit.prevent="submitForm">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -278,7 +278,7 @@
                   <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     {{ showCreateModal ? 'Tambah QR Code' : 'Edit QR Code' }}
                   </h3>
-                  
+
                   <div class="space-y-4">
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi</label>
@@ -293,7 +293,7 @@
                         </option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Shift</label>
                       <select
@@ -307,7 +307,7 @@
                         </option>
                       </select>
                     </div>
-                    
+
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Expires At</label>
                       <input
@@ -353,12 +353,12 @@
     <div v-if="showViewModal && selectedQrCode" class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showViewModal = false"></div>
-        
+
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
             <div class="text-center">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">QR Code</h3>
-              
+
               <!-- QR Code Display (placeholder - in real app, use QR code generator library) -->
               <div class="bg-gray-100 w-48 h-48 mx-auto mb-4 flex items-center justify-center rounded-lg">
                 <div class="text-center">
@@ -366,7 +366,7 @@
                   <p class="text-xs text-gray-500">QR Code akan ditampilkan di sini</p>
                 </div>
               </div>
-              
+
               <div class="space-y-2 text-left bg-gray-50 p-4 rounded-lg">
                 <div>
                   <span class="font-medium text-gray-600">Code:</span>
@@ -443,8 +443,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { 
-  QrCodeIcon, 
+import {
+  QrCodeIcon,
   ArrowLeftIcon,
   PlusIcon,
   EyeIcon,
@@ -499,7 +499,7 @@ const filteredQrCodes = computed(() => {
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(qr => 
+    filtered = filtered.filter(qr =>
       qr.code.toLowerCase().includes(query) ||
       qr.location?.name?.toLowerCase().includes(query) ||
       qr.shift?.name?.toLowerCase().includes(query)
@@ -536,7 +536,7 @@ const visiblePages = computed(() => {
   const delta = 2
   const range = []
   const rangeWithDots = []
-  
+
   for (let i = Math.max(2, currentPage.value - delta);
        i <= Math.min(totalPages.value - 1, currentPage.value + delta);
        i++) {
@@ -596,7 +596,7 @@ const loadData = async () => {
 const submitForm = async () => {
   try {
     formLoading.value = true
-    
+
     if (showCreateModal.value) {
       await qrCodeAPI.createQrCode(form.value)
       showToastMessage('QR Code berhasil dibuat')
@@ -604,7 +604,7 @@ const submitForm = async () => {
       await qrCodeAPI.updateQrCode(selectedQrCode.value.id, form.value)
       showToastMessage('QR Code berhasil diperbarui')
     }
-    
+
     closeModal()
     await loadData()
   } catch (error) {
@@ -681,12 +681,12 @@ const getTimeRemaining = (expiresAt) => {
   const now = new Date()
   const expires = new Date(expiresAt)
   const diff = expires - now
-  
+
   if (diff <= 0) return 'Expired'
-  
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  
+
   if (days > 0) return `${days} hari lagi`
   if (hours > 0) return `${hours} jam lagi`
   return 'Kurang dari 1 jam'

@@ -24,15 +24,27 @@ class QrCodeService{
 
     public function generateQrCode($data)
     {
-        // Generate kode unik dan set expired 1 jam dari sekarang
-        $data['code'] = Str::random(16);
-        $data['expires_at'] = now()->addHour();
+        // Generate UUID untuk code yang unik
+        $data['code'] = Str::uuid();
+
+        // Set expires_at dari input, atau default 24 jam dari sekarang
+        if (!isset($data['expires_at'])) {
+            $data['expires_at'] = now()->addHours(24);
+        }
+
         $qrCode = $this->qrCodeRepository->createQrCode($data);
         return $qrCode;
     }
 
-    public function updateQrCode($id, array $data)
+    public function updateQrCode($id, $data)
     {
+        // Jika expires_at tidak diset, gunakan nilai yang ada
+        $qrCode = $this->qrCodeRepository->findQrCodeById($id);
+
+        if (!isset($data['expires_at'])) {
+            $data['expires_at'] = $qrCode->expires_at;
+        }
+
         return $this->qrCodeRepository->updateQrCode($id, $data);
     }
 
