@@ -24,7 +24,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $result = $this->authService->login($credentials['login'], $credentials['password']);
+            $result = $this->authService->login((array)$credentials['login'], $credentials['password']);
             $user = $result['user'];
             $token = $result['token'];
 
