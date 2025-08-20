@@ -36,6 +36,11 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
 
     // Attendance (Presensi/Absensi)
     Route::resource('/attendances', AttendanceController::class)->except(['create', 'edit', 'update', 'destroy']);
-    // Jika ingin satpam bisa presensi, bisa buka akses POST attendances untuk role satpam di group middleware lain.
 
-});
+    });
+
+    // Route presensi untuk satpam
+    Route::middleware(['auth:sanctum', 'checkUserRole:satpam'])->group(function () {
+        Route::post('/attendances', [App\Http\Controllers\AttendanceController::class, 'store']);
+    });
+    // Jika ingin satpam bisa presensi, bisa buka akses POST attendances untuk role satpam di group middleware lain.
