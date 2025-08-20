@@ -22,6 +22,10 @@ class Attendance extends Model
         'distance',
     ];
 
+    protected $casts = [
+        'scanned_at' => 'datetime',
+    ];
+
     // Relation
     public function user()
     {

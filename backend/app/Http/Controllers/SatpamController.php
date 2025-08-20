@@ -24,23 +24,23 @@ class SatpamController extends Controller
 
         // Today's attendance
         $todayAttendance = Attendance::where('user_id', $user->id)
-            ->whereDate('attendance_date', $today)
+            ->whereDate('scanned_at', $today)
             ->first();
 
         // This month statistics
         $monthlyAttendances = Attendance::where('user_id', $user->id)
-            ->where('attendance_date', '>=', $thisMonth)
+            ->whereDate('scanned_at', '>=', $thisMonth)
             ->get();
 
         $presentDays = $monthlyAttendances->where('status', '!=', 'absent')->count();
-        $onTimeDays = $monthlyAttendances->where('status', 'present')->count();
+        $onTimeDays = $monthlyAttendances->where('status', 'on_time')->count();
         $totalWorkingDays = $thisMonth->diffInWeekdays(Carbon::now());
 
         return response()->json([
             'today' => [
                 'has_attendance' => !!$todayAttendance,
-                'check_in' => $todayAttendance?->check_in_time,
-                'check_out' => $todayAttendance?->check_out_time,
+                'check_in' => $todayAttendance?->scanned_at?->format('H:i'),
+                'check_out' => null, // Not supported in current schema
                 'location' => $todayAttendance?->location?->name,
                 'status' => $todayAttendance?->status ?? 'not_checked_in'
             ],
@@ -62,7 +62,7 @@ class SatpamController extends Controller
         $today = Carbon::today();
 
         $attendance = Attendance::where('user_id', $user->id)
-            ->whereDate('attendance_date', $today)
+            ->whereDate('scanned_at', $today)
             ->with('location')
             ->first();
 
@@ -76,8 +76,8 @@ class SatpamController extends Controller
         }
 
         return response()->json([
-            'check_in' => $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : null,
-            'check_out' => $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : null,
+            'check_in' => $attendance->scanned_at ? $attendance->scanned_at->format('H:i') : null,
+            'check_out' => null, // Not supported in current schema
             'location' => $attendance->location?->name,
             'status' => $this->getAttendanceStatus($attendance)
         ]);
@@ -92,11 +92,11 @@ class SatpamController extends Controller
         $thisMonth = Carbon::now()->startOfMonth();
 
         $attendances = Attendance::where('user_id', $user->id)
-            ->where('attendance_date', '>=', $thisMonth)
+            ->whereDate('scanned_at', '>=', $thisMonth)
             ->get();
 
         $presentCount = $attendances->where('status', '!=', 'absent')->count();
-        $onTimeCount = $attendances->where('status', 'present')->count();
+        $onTimeCount = $attendances->where('status', 'on_time')->count();
         $totalWorkingDays = $thisMonth->diffInWeekdays(Carbon::now());
 
         return response()->json([
@@ -142,41 +142,24 @@ class SatpamController extends Controller
 
         $attendances = Attendance::where('user_id', $user->id)
             ->with('location')
-            ->orderBy('attendance_date', 'desc')
+            ->orderBy('scanned_at', 'desc')
             ->limit($limit)
             ->get();
 
         $activities = [];
 
         foreach ($attendances as $attendance) {
-            if ($attendance->check_in_time) {
-                $activities[] = [
-                    'type' => 'check_in',
-                    'description' => 'Check-in di ' . ($attendance->location?->name ?? 'Lokasi tidak diketahui'),
-                    'time' => $attendance->check_in_time->format('H:i'),
-                    'date' => $attendance->attendance_date->format('d M Y')
-                ];
-            }
-
-            if ($attendance->check_out_time) {
-                $activities[] = [
-                    'type' => 'check_out',
-                    'description' => 'Check-out dari ' . ($attendance->location?->name ?? 'Lokasi tidak diketahui'),
-                    'time' => $attendance->check_out_time->format('H:i'),
-                    'date' => $attendance->attendance_date->format('d M Y')
-                ];
-            }
+            $activities[] = [
+                'type' => 'check_in',
+                'description' => 'Presensi di ' . ($attendance->location?->name ?? 'Lokasi tidak diketahui'),
+                'time' => $attendance->scanned_at->format('H:i'),
+                'date' => $attendance->scanned_at->format('d M Y'),
+                'location' => $attendance->location?->name ?? 'Lokasi tidak diketahui'
+            ];
         }
 
-        // Sort activities by date and time
-        usort($activities, function($a, $b) {
-            return strtotime($b['date'] . ' ' . $b['time']) - strtotime($a['date'] . ' ' . $a['time']);
-        });
-
-        return response()->json(array_slice($activities, 0, $limit));
-    }
-
-    /**
+        return response()->json($activities);
+    }    /**
      * Process QR Code attendance
      */
     public function processQrAttendance(Request $request)
@@ -203,57 +186,38 @@ class SatpamController extends Controller
             ], 400);
         }
 
-        // Check existing attendance for today
-        $attendance = Attendance::where('user_id', $user->id)
-            ->whereDate('attendance_date', $today)
+        // Check if user already has attendance for today
+        $existingAttendance = Attendance::where('user_id', $user->id)
+            ->whereDate('scanned_at', $today)
             ->first();
 
         $now = Carbon::now();
 
-        if (!$attendance) {
-            // Create new attendance record (Check-in)
-            $attendance = Attendance::create([
-                'user_id' => $user->id,
-                'location_id' => $qrCode->location_id,
-                'qr_code_id' => $qrCode->id,
-                'attendance_date' => $today,
-                'check_in_time' => $now,
-                'check_in_latitude' => $request->latitude,
-                'check_in_longitude' => $request->longitude,
-                'status' => $this->calculateStatus($now, 'check_in')
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Check-in berhasil',
-                'type' => 'check_in',
-                'time' => $now->format('H:i'),
-                'location' => $qrCode->location->name
-            ]);
-
-        } elseif (!$attendance->check_out_time) {
-            // Update with check-out
-            $attendance->update([
-                'check_out_time' => $now,
-                'check_out_latitude' => $request->latitude,
-                'check_out_longitude' => $request->longitude,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Check-out berhasil',
-                'type' => 'check_out',
-                'time' => $now->format('H:i'),
-                'location' => $qrCode->location->name,
-                'work_duration' => $this->calculateWorkDuration($attendance->check_in_time, $now)
-            ]);
-
-        } else {
+        if ($existingAttendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'Anda sudah melakukan check-out hari ini'
+                'message' => 'Anda sudah melakukan presensi hari ini'
             ], 400);
         }
+
+        // Create new attendance record
+        $attendance = Attendance::create([
+            'user_id' => $user->id,
+            'location_id' => $qrCode->location_id,
+            'qr_code_id' => $qrCode->id,
+            'scanned_at' => $now,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'status' => 'present' // or calculate based on time if needed
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Presensi berhasil',
+            'time' => $now->format('H:i'),
+            'location' => $qrCode->location->name,
+            'status' => $attendance->status
+        ]);
     }
 
     /**
@@ -268,11 +232,11 @@ class SatpamController extends Controller
 
         // Apply filters
         if ($request->start_date) {
-            $query->whereDate('attendance_date', '>=', $request->start_date);
+            $query->whereDate('scanned_at', '>=', $request->start_date);
         }
 
         if ($request->end_date) {
-            $query->whereDate('attendance_date', '<=', $request->end_date);
+            $query->whereDate('scanned_at', '<=', $request->end_date);
         }
 
         if ($request->status) {
@@ -283,16 +247,14 @@ class SatpamController extends Controller
             $query->where('location_id', $request->location_id);
         }
 
-        $attendances = $query->orderBy('attendance_date', 'desc')
+        $attendances = $query->orderBy('scanned_at', 'desc')
             ->paginate($request->get('per_page', 15));
 
         $data = $attendances->map(function ($attendance) {
             return [
                 'id' => $attendance->id,
-                'date' => $attendance->attendance_date->format('Y-m-d'),
-                'check_in' => $attendance->check_in_time?->format('H:i'),
-                'check_out' => $attendance->check_out_time?->format('H:i'),
-                'duration' => $this->calculateWorkDuration($attendance->check_in_time, $attendance->check_out_time),
+                'date' => $attendance->scanned_at->format('Y-m-d'),
+                'time' => $attendance->scanned_at->format('H:i'),
                 'location' => $attendance->location?->name,
                 'status' => $attendance->status,
                 'notes' => $attendance->notes ?? ''
@@ -367,7 +329,7 @@ class SatpamController extends Controller
      */
     private function getAttendanceStatus($attendance)
     {
-        if (!$attendance->check_in_time) {
+        if (!$attendance->scanned_at) {
             return 'not_checked_in';
         }
 
