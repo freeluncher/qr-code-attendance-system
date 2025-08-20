@@ -18,6 +18,11 @@ class Attendance extends Model
         'status',
         'late_category',
         'photo_url',
+        'face_photo_url',
+        'face_landmarks',
+        'face_descriptor',
+        'face_quality_status',
+        'face_validation_message',
         'latitude',
         'longitude',
         'check_out_latitude',
@@ -28,6 +33,8 @@ class Attendance extends Model
     protected $casts = [
         'scanned_at' => 'datetime',
         'check_out_time' => 'datetime',
+        'face_landmarks' => 'array',
+        'face_descriptor' => 'array',
     ];
 
     // Relation

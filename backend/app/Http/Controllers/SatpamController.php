@@ -182,7 +182,12 @@ class SatpamController extends Controller
         $request->validate([
             'qr_code' => 'required|string',
             'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric'
+            'longitude' => 'nullable|numeric',
+            'face_photo' => 'nullable|string', // base64 image
+            'face_landmarks' => 'nullable|array',
+            'face_descriptor' => 'nullable|array',
+            'face_quality_status' => 'nullable|string',
+            'face_validation_message' => 'nullable|string'
         ]);
 
         $user = Auth::user();
@@ -224,6 +229,22 @@ class SatpamController extends Controller
             }
         } else {
             $distance = null;
+        }
+
+        // Handle face photo if provided
+        $facePhotoUrl = null;
+        if ($request->face_photo) {
+            try {
+                // Decode base64 image
+                $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->face_photo));
+                $imageName = 'face_' . $user->id . '_' . now()->format('Y-m-d_H-i-s') . '.jpg';
+
+                // Save to storage
+                \Storage::disk('public')->put('attendance_faces/' . $imageName, $imageData);
+                $facePhotoUrl = 'attendance_faces/' . $imageName;
+            } catch (\Exception $e) {
+                \Log::error('Failed to save face photo: ' . $e->getMessage());
+            }
         }
 
         if ($existingAttendance) {
@@ -279,6 +300,11 @@ class SatpamController extends Controller
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'distance' => $distance,
+            'face_photo_url' => $facePhotoUrl,
+            'face_landmarks' => $request->face_landmarks,
+            'face_descriptor' => $request->face_descriptor,
+            'face_quality_status' => $request->face_quality_status,
+            'face_validation_message' => $request->face_validation_message,
             'status' => $status
         ]);
 

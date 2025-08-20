@@ -28,7 +28,7 @@ class SatpamAPI {
   }
 
   // QR Code Attendance
-  async processQrAttendance(qrCode, latitude = null, longitude = null) {
+  async processQrAttendance(qrCode, latitude = null, longitude = null, facePhoto = null, faceLandmarks = null, faceDescriptor = null, faceQuality = null, faceMessage = null) {
     // Validate qrCode
     if (!qrCode || typeof qrCode !== 'string' || qrCode.includes('[object')) {
       throw new Error('Invalid QR code format')
@@ -37,19 +37,31 @@ class SatpamAPI {
     // Clean up the qrCode string
     qrCode = qrCode.trim()
 
+    const requestData = {
+      qr_code: qrCode,
+      latitude,
+      longitude
+    }
+
+    // Add face data if provided
+    if (facePhoto) {
+      requestData.face_photo = facePhoto
+      requestData.face_landmarks = faceLandmarks
+      requestData.face_descriptor = faceDescriptor
+      requestData.face_quality_status = faceQuality
+      requestData.face_validation_message = faceMessage
+    }
+
     console.log('Sending QR attendance data:', {
       qr_code: qrCode,
       latitude,
       longitude,
       qrCodeType: typeof qrCode,
-      qrCodeLength: qrCode.length
+      qrCodeLength: qrCode.length,
+      hasFaceData: !!facePhoto
     })
 
-    return await api.post('/satpam/qr-attendance', {
-      qr_code: qrCode,
-      latitude,
-      longitude
-    })
+    return await api.post('/satpam/qr-attendance', requestData)
   }
 
   // History

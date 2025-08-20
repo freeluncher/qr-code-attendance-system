@@ -209,11 +209,11 @@
             <div class="space-y-3 max-w-md mx-auto">
               <button
                 v-if="!cameraActive"
-                @click="startCamera"
+                @click="startCamera('environment')"
                 class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 <CameraIcon class="h-5 w-5 inline mr-2" />
-                Mulai Kamera
+                Mulai Kamera (QR Scan)
               </button>
 
               <div v-if="cameraActive" class="flex space-x-3">
@@ -361,6 +361,109 @@
         </div>
       </div>
     </Transition>
+
+    <!-- Face Capture Modal -->
+    <Transition name="modal">
+      <div v-if="showFaceCapture" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black bg-opacity-75 transition-opacity duration-300"></div>
+
+        <!-- Modal Content -->
+        <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6 transform transition-all duration-300 scale-100">
+          <div class="text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+              🔐 Verifikasi Wajah
+            </h3>
+
+            <!-- Camera Preview for Face Verification -->
+            <div class="relative mb-4">
+              <div class="w-80 h-60 mx-auto bg-gray-900 rounded-lg overflow-hidden relative">
+                <video
+                  ref="faceVideoPreview"
+                  v-show="cameraActive && !faceDetectionLoading"
+                  class="w-full h-full object-cover transform scaleX-[-1]"
+                  autoplay
+                  muted
+                  playsinline>
+                </video>
+
+                <!-- Face Guide Overlay -->
+                <div v-show="cameraActive && !faceDetectionLoading"
+                     class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <!-- Face oval guide - better centered -->
+                  <div class="w-40 h-48 border-4 border-green-400 border-dashed rounded-full opacity-80 flex items-center justify-center">
+                    <div class="text-green-400 text-xs font-medium bg-black bg-opacity-50 px-2 py-1 rounded">
+                      WAJAH
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Instructions overlay -->
+                <div v-show="cameraActive && !faceDetectionLoading"
+                     class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
+                  <p class="text-white text-sm text-center font-medium">
+                    📸 Posisikan wajah di dalam oval hijau
+                  </p>
+                  <p class="text-green-300 text-xs text-center mt-1">
+                    Pastikan wajah terlihat jelas dan menghadap kamera
+                  </p>
+                </div>
+
+                <!-- Loading state -->
+                <div v-if="faceDetectionLoading"
+                     class="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center">
+                  <div class="text-center text-white">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
+                    <p class="text-sm font-medium">🔍 Menganalisis wajah...</p>
+                    <p class="text-xs mt-2 opacity-75">Mohon jangan bergerak</p>
+                  </div>
+                </div>
+
+                <!-- Preview captured photo -->
+                <div v-if="facePhoto && !faceDetectionLoading"
+                     class="absolute inset-0 bg-white flex items-center justify-center">
+                  <div class="text-center">
+                    <img :src="facePhoto" alt="Captured Face"
+                         class="w-48 h-48 object-cover rounded-lg mx-auto border-2 border-green-400 mb-2" />
+                    <p class="text-sm text-green-600 font-medium">✅ Wajah berhasil diverifikasi</p>
+                  </div>
+                </div>
+
+                <!-- Camera not ready state -->
+                <div v-if="!cameraActive"
+                     class="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                  <div class="text-center text-gray-300">
+                    <div class="text-4xl mb-2">📷</div>
+                    <p class="text-sm">Menyiapkan kamera...</p>
+                  </div>
+                </div>
+              </div>
+            </div>            <!-- Instructions -->
+            <div v-if="!faceDetectionLoading" class="mb-4">
+              <p class="text-sm text-gray-600 mb-2">
+                📸 Pastikan wajah Anda terlihat jelas dan berada di dalam panduan oval
+              </p>
+              <div class="flex justify-center space-x-4 text-xs text-gray-500">
+                <span>✓ Cahaya cukup</span>
+                <span>✓ Wajah menghadap kamera</span>
+                <span>✓ Tidak ada penghalang</span>
+              </div>
+            </div>
+
+            <!-- Processing status -->
+            <div v-if="faceDetectionLoading" class="mb-4">
+              <p class="text-sm text-blue-600 font-medium">Sedang memproses verifikasi wajah...</p>
+              <p class="text-xs text-gray-500 mt-1">Proses ini memakan waktu beberapa detik</p>
+            </div>
+
+            <!-- Security note -->
+            <p class="text-xs text-gray-400 mt-4">
+              🔒 Foto wajah disimpan hanya untuk keamanan dan audit presensi
+            </p>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -368,6 +471,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import satpamAPI from '../../services/satpam'
 import jsQR from 'jsqr'
+import faceDetection from '../../services/faceDetection'
 import {
   QrCodeIcon,
   ArrowLeftIcon,
@@ -388,10 +492,24 @@ const processing = ref(false)
 
 // Camera related
 const videoElement = ref(null)
+const faceVideoPreview = ref(null)
 const canvasElement = ref(null)
 const cameraActive = ref(false)
 const cameraLoading = ref(false)
 const cameraError = ref('')
+const cameraMode = ref('qr') // 'qr' or 'face'
+
+// Face detection
+const showFaceCapture = ref(false)
+const faceDetectionLoading = ref(false)
+const facePhoto = ref(null)
+const faceData = ref({
+  landmarks: null,
+  descriptor: null,
+  quality: null,
+  message: null
+})
+const qrCodeData = ref('')
 
 // Attendance data
 const todayAttendance = ref({
@@ -491,27 +609,40 @@ const toggleScanMode = () => {
   scanMode.value = scanMode.value === 'manual' ? 'camera' : 'manual'
 }
 
-const startCamera = async () => {
+const startCamera = async (facingMode = 'environment') => {
   cameraLoading.value = true
   cameraError.value = ''
 
   try {
+    console.log(`📹 Starting camera with facingMode: ${facingMode}`)
+
+    // Set camera mode based on facingMode
+    cameraMode.value = facingMode === 'user' ? 'face' : 'qr'
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: {
+        facingMode: facingMode,
+        width: { ideal: facingMode === 'user' ? 640 : 1280 },
+        height: { ideal: facingMode === 'user' ? 480 : 720 }
+      }
     })
 
     if (videoElement.value) {
       videoElement.value.srcObject = stream
       cameraActive.value = true
 
-      // Start auto-scanning when video is ready
-      videoElement.value.onloadedmetadata = () => {
-        console.log('📹 Camera started, beginning QR scan...')
-        setTimeout(() => {
-          if (cameraActive.value) {
-            captureQR()
-          }
-        }, 1000) // Wait 1 second for camera to stabilize
+      // Start auto-scanning when video is ready (only for QR scan)
+      if (facingMode === 'environment') {
+        videoElement.value.onloadedmetadata = () => {
+          console.log('📹 Back camera started, beginning QR scan...')
+          setTimeout(() => {
+            if (cameraActive.value && cameraMode.value === 'qr') {
+              captureQR()
+            }
+          }, 1000) // Wait 1 second for camera to stabilize
+        }
+      } else {
+        console.log('📹 Front camera started for face capture')
       }
     }
   } catch (error) {
@@ -519,6 +650,44 @@ const startCamera = async () => {
     cameraError.value = 'Gagal mengakses kamera. Pastikan izin kamera telah diberikan.'
   } finally {
     cameraLoading.value = false
+  }
+}
+
+// Switch to front camera for face capture
+const switchToFrontCamera = async () => {
+  try {
+    console.log('🔄 Switching to front camera for face capture...')
+
+    // Stop current stream
+    if (videoElement.value && videoElement.value.srcObject) {
+      const tracks = videoElement.value.srcObject.getTracks()
+      tracks.forEach(track => track.stop())
+    }
+
+    // Use startCamera with 'user' facingMode
+    await startCamera('user')
+    console.log('✅ Front camera activated')
+
+  } catch (error) {
+    console.error('Error switching to front camera:', error)
+    throw new Error('Gagal mengaktifkan kamera depan. Pastikan perangkat memiliki kamera depan.')
+  }
+}// Switch back to environment camera for QR scanning
+const switchToBackCamera = async () => {
+  try {
+    console.log('🔄 Switching back to environment camera for QR scanning...')
+
+    // Stop current stream
+    if (videoElement.value && videoElement.value.srcObject) {
+      const tracks = videoElement.value.srcObject.getTracks()
+      tracks.forEach(track => track.stop())
+    }
+
+    // Use startCamera with 'environment' facingMode
+    await startCamera('environment')
+    console.log('✅ Back camera activated for QR scanning')
+  } catch (error) {
+    console.error('Error switching to back camera:', error)
   }
 }
 
@@ -532,14 +701,36 @@ const stopCamera = () => {
 }
 
 const captureQR = async () => {
-  if (!videoElement.value || !canvasElement.value) return
+  if (!videoElement.value || !canvasElement.value) {
+    console.warn('⚠️ Video or canvas element not available')
+    return
+  }
+
+  if (videoElement.value.readyState < 2) {
+    console.warn('⚠️ Video not ready, readyState:', videoElement.value.readyState)
+    // Retry after video is ready
+    setTimeout(() => {
+      if (cameraActive.value && cameraMode.value === 'qr') {
+        captureQR()
+      }
+    }, 500)
+    return
+  }
 
   processing.value = true
 
   try {
     // Capture frame from video
     const canvas = canvasElement.value
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+
+    // Debug video dimensions
+    console.log('🎥 Video dimensions:', {
+      videoWidth: videoElement.value.videoWidth,
+      videoHeight: videoElement.value.videoHeight,
+      readyState: videoElement.value.readyState
+    })
+
     canvas.width = videoElement.value.videoWidth
     canvas.height = videoElement.value.videoHeight
     context.drawImage(videoElement.value, 0, 0)
@@ -547,14 +738,24 @@ const captureQR = async () => {
     // Get image data for QR detection
     const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
 
+    // Debug image data
+    console.log('🖼️ Image data:', {
+      width: imageData.width,
+      height: imageData.height,
+      dataLength: imageData.data.length,
+      hasData: imageData.data.some(pixel => pixel > 0)
+    })
+
     // Try to decode QR code using jsQR
-    const qrCodeResult = jsQR(imageData.data, imageData.width, imageData.height)
+    const qrCodeResult = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "dontInvert"
+    })
 
     if (qrCodeResult) {
       console.log('🎯 QR Code detected:', qrCodeResult.data)
 
-      // Stop camera and process the QR code
-      stopCamera()
+      // Don't stop camera yet - we need it for face capture
+      // stopCamera() will be called after face verification
       await processQRCode(qrCodeResult.data)
     } else {
       // No QR code found, continue scanning
@@ -562,7 +763,7 @@ const captureQR = async () => {
 
       // Auto-retry after a short delay
       setTimeout(() => {
-        if (cameraActive.value && !processing.value) {
+        if (cameraActive.value && !processing.value && cameraMode.value === 'qr') {
           captureQR()
         }
       }, 500) // Retry every 500ms
@@ -621,6 +822,171 @@ const processQRCode = async (qrData = null) => {
 
   console.log('Processing QR Code:', qrCode)
 
+  // Store QR code for face capture step
+  qrCodeData.value = qrCode
+
+  // Start face capture process
+  await captureFacePhoto()
+}
+
+// Face capture method
+const captureFacePhoto = async () => {
+  try {
+    showFaceCapture.value = true
+    faceDetectionLoading.value = false // Start with loading false to show camera preview first
+
+    // Switch to front camera for face capture
+    console.log('🔄 Switching to front camera for face verification...')
+    await switchToFrontCamera()
+
+    // Setup face video preview with front camera stream
+    await new Promise(resolve => setTimeout(resolve, 300)) // Wait for modal and camera to be ready
+
+    if (faceVideoPreview.value && videoElement.value && videoElement.value.srcObject) {
+      console.log('Setting up face video preview with front camera...')
+      faceVideoPreview.value.srcObject = videoElement.value.srcObject
+      console.log('✅ Face video preview stream set with front camera')
+    } else {
+      console.warn('⚠️ Face video preview setup failed')
+    }
+
+    // Load face detection models first
+    console.log('📋 Loading face detection models...')
+    await faceDetection.loadModels()
+    console.log('✅ Models loaded successfully')
+
+    // Debug camera state
+    console.log('🔍 Debug camera state:')
+    console.log('- cameraActive:', cameraActive.value)
+    console.log('- videoElement exists:', !!videoElement.value)
+    console.log('- videoElement srcObject:', videoElement.value?.srcObject)
+    console.log('- videoElement readyState:', videoElement.value?.readyState)
+    console.log('- videoElement videoWidth:', videoElement.value?.videoWidth)
+    console.log('- videoElement videoHeight:', videoElement.value?.videoHeight)
+
+    // Check if camera is active and video element is ready
+    if (!cameraActive.value) {
+      throw new Error('Camera tidak aktif. Status: ' + cameraActive.value)
+    }
+
+    if (!videoElement.value) {
+      throw new Error('Video element tidak ditemukan.')
+    }
+
+    if (!videoElement.value.srcObject) {
+      throw new Error('Video stream tidak tersedia.')
+    }
+
+    // Debug video element readyState
+    console.log('Video element readyState:', videoElement.value.readyState)
+    console.log('Camera active:', cameraActive.value)
+
+    // Give user time to position face (show preview for 3 seconds)
+    console.log('👤 Showing face positioning preview...')
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
+    // Now start face detection process
+    faceDetectionLoading.value = true
+    console.log('📸 Capturing face photo from video...')
+
+    // Add delay to ensure video frame is stable
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Capture photo from video
+    const captureResult = await faceDetection.captureImageFromVideo(videoElement.value)
+    facePhoto.value = captureResult.dataUrl
+
+    console.log('✅ Photo captured successfully')
+
+    // Create temporary image element for face detection
+    const img = new Image()
+
+    img.onload = async () => {
+      try {
+        console.log('🔍 Starting face detection on captured image...')
+
+        // Detect face and landmarks
+        const detection = await faceDetection.detectFaceWithLandmarks(img)
+        console.log('Face detection result:', detection)
+
+        // Validate face quality
+        const validation = faceDetection.validateFaceQuality(detection)
+        console.log('Face validation result:', validation)
+
+        if (!validation.isValid) {
+          showError('Validasi Wajah Gagal', validation.message)
+          showFaceCapture.value = false
+          faceDetectionLoading.value = false
+          processing.value = false
+
+          // Stop camera on validation error
+          if (cameraActive.value) {
+            stopCamera()
+          }
+          return
+        }
+
+        // Store face data
+        faceData.value = {
+          landmarks: detection.landmarks.positions,
+          descriptor: Array.from(detection.descriptor),
+          quality: 'good',
+          message: validation.message
+        }
+
+        console.log('✅ Face data stored, proceeding to attendance...')
+        faceDetectionLoading.value = false
+
+        // Proceed with attendance
+        await processAttendance()
+      } catch (faceError) {
+        console.error('Face detection error:', faceError)
+        showError('Error Deteksi Wajah', 'Gagal menganalisis wajah: ' + faceError.message)
+        showFaceCapture.value = false
+        faceDetectionLoading.value = false
+        processing.value = false
+
+        // Stop camera on face detection error
+        if (cameraActive.value) {
+          stopCamera()
+        }
+      }
+    }
+
+    img.onerror = (error) => {
+      console.error('Failed to load captured image:', error)
+      showError('Error Gambar', 'Gagal memuat foto yang diambil. Pastikan camera berfungsi dengan baik.')
+      showFaceCapture.value = false
+      faceDetectionLoading.value = false
+      processing.value = false
+
+      // Stop camera on image load error
+      if (cameraActive.value) {
+        stopCamera()
+      }
+    }
+
+    // Set image source with error handling
+    console.log('🖼️ Loading captured image for processing...')
+    img.crossOrigin = 'anonymous'
+    img.src = captureResult.dataUrl
+
+  } catch (error) {
+    console.error('Face capture error:', error)
+    showError('Error Ambil Foto', error.message)
+    showFaceCapture.value = false
+    faceDetectionLoading.value = false
+    processing.value = false
+
+    // Stop camera on face capture error
+    if (cameraActive.value) {
+      stopCamera()
+    }
+  }
+}
+
+// Process attendance with face data
+const processAttendance = async () => {
   try {
     // Get current location
     let location = null
@@ -630,11 +996,16 @@ const processQRCode = async (qrData = null) => {
       console.warn('Could not get location:', locationError)
     }
 
-    // Process QR attendance
+    // Process QR attendance with face data
     const result = await satpamAPI.processQrAttendance(
-      qrCode,
+      qrCodeData.value,
       location?.latitude,
-      location?.longitude
+      location?.longitude,
+      facePhoto.value, // base64 image
+      faceData.value.landmarks,
+      faceData.value.descriptor,
+      faceData.value.quality,
+      faceData.value.message
     )
 
     if (result.success) {
@@ -675,7 +1046,20 @@ const processQRCode = async (qrData = null) => {
     console.error('Attendance error:', error)
     showError('Error Presensi', error.response?.data?.message || 'Gagal melakukan presensi. Coba lagi.')
   } finally {
+    // Cleanup face capture
+    showFaceCapture.value = false
+    faceDetectionLoading.value = false
     processing.value = false
+
+    // Reset face data
+    facePhoto.value = null
+    faceData.value = {
+      landmarks: null,
+      descriptor: null,
+      quality: null,
+      message: null
+    }
+    qrCodeData.value = ''
   }
 }
 
