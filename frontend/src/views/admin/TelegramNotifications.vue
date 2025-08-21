@@ -282,8 +282,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
-import * as telegramAPI from '@/api/telegram'
-import * as locationAPI from '@/api/locations'
+import telegramAPI from '../../services/telegram'
+import api from '../../services/api'
 
 // Reactive data
 const botInfo = ref(null)
@@ -357,7 +357,7 @@ const loadTelegramUsers = async () => {
 
 const loadLocations = async () => {
   try {
-    const response = await locationAPI.getLocations()
+    const response = await api.get('/locations')
     locations.value = response.data.data || response.data
   } catch (error) {
     console.error('Error loading locations:', error)

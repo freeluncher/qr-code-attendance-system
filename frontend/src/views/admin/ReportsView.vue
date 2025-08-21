@@ -174,7 +174,7 @@
         <div class="bg-white rounded-lg shadow-sm p-6">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Tren Presensi</h3>
           <div class="h-64">
-            <AttendanceLineChart :data="chartData.attendance_trend" />
+            <AttendanceLineChart :data="attendanceTrendData" />
           </div>
         </div>
 
@@ -377,6 +377,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '../../services/api'
+import reportsAPI from '../../services/reports'
 import AttendanceLineChart from '../../components/charts/AttendanceLineChart.vue'
 import AttendanceDonutChart from '../../components/charts/AttendanceDonutChart.vue'
 import {
@@ -409,7 +410,7 @@ const reportSummary = ref({
   absent_count: 0
 })
 const chartData = ref({
-  attendance_trend: {},
+  attendance_trend: [],
   location_distribution: {}
 })
 const selectedUser = ref(null)
@@ -439,21 +440,31 @@ const filteredReportData = computed(() => {
   return filtered
 })
 
+// Computed property for attendance trend data in correct format
+const attendanceTrendData = computed(() => {
+  if (!chartData.value.attendance_trend || !Array.isArray(chartData.value.attendance_trend)) {
+    // Return mock data for development
+    return [
+      { date: '2025-01-15', day_name: 'Sen', formatted_date: '15 Jan', total: 12, on_time: 10, late: 2 },
+      { date: '2025-01-16', day_name: 'Sel', formatted_date: '16 Jan', total: 15, on_time: 13, late: 2 },
+      { date: '2025-01-17', day_name: 'Rab', formatted_date: '17 Jan', total: 18, on_time: 15, late: 3 },
+      { date: '2025-01-18', day_name: 'Kam', formatted_date: '18 Jan', total: 14, on_time: 12, late: 2 },
+      { date: '2025-01-19', day_name: 'Jum', formatted_date: '19 Jan', total: 16, on_time: 14, late: 2 },
+      { date: '2025-01-20', day_name: 'Sab', formatted_date: '20 Jan', total: 10, on_time: 8, late: 2 },
+      { date: '2025-01-21', day_name: 'Min', formatted_date: '21 Jan', total: 8, on_time: 7, late: 1 }
+    ]
+  }
+  return chartData.value.attendance_trend
+})
+
 // Methods
 const loadReportData = async () => {
   loading.value = true
   try {
-    const params = new URLSearchParams()
-    Object.keys(filters.value).forEach(key => {
-      if (filters.value[key]) {
-        params.append(key, filters.value[key])
-      }
-    })
-
-    const response = await api.get(`/reports/attendance?${params}`)
-    reportData.value = response.data.report_data
-    reportSummary.value = response.data.summary
-    chartData.value = response.data.charts
+    const response = await reportsAPI.getAttendanceReports(filters.value)
+    reportData.value = response.data.report_data || []
+    reportSummary.value = response.data.summary || {}
+    chartData.value = response.data.charts || { attendance_trend: [], location_distribution: {} }
   } catch (error) {
     console.error('Error loading report data:', error)
     // Fallback data for development
@@ -486,15 +497,15 @@ const loadReportData = async () => {
       absent_count: 3
     }
     chartData.value = {
-      attendance_trend: {
-        labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-        datasets: [{
-          label: 'Presensi',
-          data: [12, 15, 18, 14, 16, 10, 8],
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)'
-        }]
-      },
+      attendance_trend: [
+        { date: '2025-01-15', day_name: 'Sen', formatted_date: '15 Jan', total: 12, on_time: 10, late: 2 },
+        { date: '2025-01-16', day_name: 'Sel', formatted_date: '16 Jan', total: 15, on_time: 13, late: 2 },
+        { date: '2025-01-17', day_name: 'Rab', formatted_date: '17 Jan', total: 18, on_time: 15, late: 3 },
+        { date: '2025-01-18', day_name: 'Kam', formatted_date: '18 Jan', total: 14, on_time: 12, late: 2 },
+        { date: '2025-01-19', day_name: 'Jum', formatted_date: '19 Jan', total: 16, on_time: 14, late: 2 },
+        { date: '2025-01-20', day_name: 'Sab', formatted_date: '20 Jan', total: 10, on_time: 8, late: 2 },
+        { date: '2025-01-21', day_name: 'Min', formatted_date: '21 Jan', total: 8, on_time: 7, late: 1 }
+      ],
       location_distribution: {
         labels: ['Pos Utara', 'Pos Selatan', 'Pos Barat'],
         datasets: [{

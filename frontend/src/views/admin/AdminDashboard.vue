@@ -363,12 +363,12 @@
             <button
               @click="generatePredictions"
               :disabled="predictionsLoading"
-              class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
+              class="bg-blue-500 bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
             >
               <CpuChipIcon class="h-4 w-4" />
               <span>{{ predictionsLoading ? 'Generating...' : 'Generate' }}</span>
             </button>
-            <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <div class="bg-blue-500 bg-opacity-20 rounded-full p-3">
               <CpuChipIcon class="h-8 w-8 text-white" />
             </div>
           </div>
