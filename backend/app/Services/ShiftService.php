@@ -12,10 +12,10 @@ class ShiftService
         $this->shiftRepository = $shiftRepository;
     }
 
-    // Ambil semua shifts dengan pagination
-    public function getAllShifts($perPage = 10)
+    // Ambil semua shifts dengan pagination dan filter
+    public function getAllShifts($perPage = 10, $locationId = null, $dayOfWeek = null)
     {
-        return $this->shiftRepository->getAllShifts($perPage);
+        return $this->shiftRepository->getAllShifts($perPage, $locationId, $dayOfWeek);
     }
 
     // Ambil satu shift berdasarkan id
@@ -40,5 +40,17 @@ class ShiftService
     public function deleteShift($id)
     {
         return $this->shiftRepository->deleteShift($id);
+    }
+
+    // Get shifts for specific location
+    public function getShiftsForLocation($locationId)
+    {
+        return $this->shiftRepository->getShiftsForLocation($locationId);
+    }
+
+    // Get available shifts for location on specific day
+    public function getAvailableShiftsForLocationAndDay($locationId, $dayOfWeek)
+    {
+        return $this->shiftRepository->getAvailableShiftsForLocationAndDay($locationId, $dayOfWeek);
     }
 }

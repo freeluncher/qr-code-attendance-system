@@ -307,6 +307,14 @@
             </router-link>
 
             <router-link
+              to="/admin/shifts"
+              class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <ClockIcon class="h-5 w-5 text-purple-600 mr-3" />
+              <span class="text-sm font-medium text-gray-900">Kelola Shift</span>
+            </router-link>
+
+            <router-link
               to="/admin/qrcodes"
               class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >

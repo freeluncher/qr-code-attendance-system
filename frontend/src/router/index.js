@@ -77,6 +77,16 @@ const router = createRouter({
       }
     },
     {
+      path: '/admin/shifts',
+      name: 'admin-shifts',
+      component: () => import('../views/admin/ShiftManagement.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresRole: 'admin',
+        title: 'Kelola Shift - QR Attendance System'
+      }
+    },
+    {
       path: '/admin/qrcodes',
       name: 'admin-qrcodes',
       component: () => import('../views/admin/QrCodeManagement.vue'),
