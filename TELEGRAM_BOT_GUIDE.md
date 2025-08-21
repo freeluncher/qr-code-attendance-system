@@ -94,9 +94,9 @@ Weekend Shift (08:00-20:00, Sat-Sun):
 
 ### 2. Environment Configuration
 ```env
-# Add to .env (ALREADY CONFIGURED)
-TELEGRAM_BOT_TOKEN=8302774902:AAHZsp3rQ3FINSXrX1WFKN30IfXR9NT5n20
-TELEGRAM_WEBHOOK_URL=https://5854b2bb7e6a.ngrok-free.app/api/telegram/webhook
+# Add to .env
+TELEGRAM_BOT_TOKEN=<your_bot_token>
+TELEGRAM_WEBHOOK_URL=https://your-domain.com/api/telegram/webhook
 ```
 
 ### 3. Database Migration
