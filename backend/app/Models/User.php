@@ -25,6 +25,9 @@ class User extends Authenticatable
         'password',
         'role',
         'photo',
+        'telegram_chat_id',
+        'telegram_username',
+        'telegram_notifications_enabled',
     ];
 
     /**
@@ -47,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'telegram_notifications_enabled' => 'boolean',
         ];
     }
 
@@ -54,5 +58,32 @@ class User extends Authenticatable
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    // Telegram helpers
+    public function hasTelegramEnabled()
+    {
+        return !empty($this->telegram_chat_id) && $this->telegram_notifications_enabled;
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function scopeWithTelegram($query)
+    {
+        return $query->whereNotNull('telegram_chat_id')
+                    ->where('telegram_notifications_enabled', true);
+    }
+
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
     }
 }

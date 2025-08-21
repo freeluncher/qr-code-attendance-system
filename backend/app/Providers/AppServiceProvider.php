@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
 use App\Repositories\DashboardRepository;
 use App\Services\DashboardService;
 use App\Services\GeocodingService;
+use App\Services\TelegramService;
+use App\Events\AttendanceRecorded;
+use App\Listeners\SendTelegramNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GeocodingService::class, function ($app) {
             return new GeocodingService();
         });
+
+        // Register Telegram Service
+        $this->app->singleton(TelegramService::class, function ($app) {
+            return new TelegramService();
+        });
     }
 
     /**
@@ -31,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register event listeners
+        Event::listen(
+            AttendanceRecorded::class,
+            SendTelegramNotification::class,
+        );
     }
 }

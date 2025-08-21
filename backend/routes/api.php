@@ -10,11 +10,27 @@ use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SatpamController;
+use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\TelegramNotificationController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Telegram Webhook (no auth required)
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
+// Debug endpoint for testing
+Route::any('/telegram/test', function(Request $request) {
+    return response()->json([
+        'status' => 'ok',
+        'method' => $request->method(),
+        'headers' => $request->headers->all(),
+        'body' => $request->all(),
+        'timestamp' => now()
+    ]);
+});
 
 // Protected Routes only for Admin
 Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
@@ -48,6 +64,17 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
         Route::get('/activities', [DashboardController::class, 'recentActivities']);
         Route::get('/late-employees', [DashboardController::class, 'topLateEmployees']);
         Route::get('/attendance-chart', [DashboardController::class, 'attendanceChart']);
+    });
+
+    // Telegram Management for Admin
+    Route::prefix('telegram')->group(function () {
+        Route::get('/bot-info', [TelegramNotificationController::class, 'getBotInfo']);
+        Route::post('/webhook', [TelegramNotificationController::class, 'setWebhook']);
+        Route::get('/users', [TelegramNotificationController::class, 'getTelegramUsers']);
+        Route::post('/test-notification', [TelegramNotificationController::class, 'sendTestNotification']);
+        Route::post('/broadcast', [TelegramNotificationController::class, 'sendBroadcast']);
+        Route::post('/daily-report', [TelegramNotificationController::class, 'sendDailyReport']);
+        Route::put('/users/{userId}/notifications', [TelegramNotificationController::class, 'toggleNotifications']);
     });
 
 });

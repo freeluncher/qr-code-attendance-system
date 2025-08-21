@@ -40,4 +40,9 @@ return [
         'enabled' => env('GEOCODING_ENABLED', true),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_url' => env('TELEGRAM_WEBHOOK_URL'),
+    ],
+
 ];
