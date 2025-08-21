@@ -376,8 +376,8 @@
             </h3>
 
             <!-- Camera Preview for Face Verification -->
-            <div class="relative mb-4">
-              <div class="w-80 h-60 mx-auto bg-gray-900 rounded-lg overflow-hidden relative">
+            <div class="relative mb-4 flex justify-center">
+              <div class="w-80 h-60 bg-gray-900 rounded-lg overflow-hidden relative">
                 <video
                   ref="faceVideoPreview"
                   v-show="cameraActive && !faceDetectionLoading"
@@ -389,22 +389,32 @@
 
                 <!-- Face Guide Overlay -->
                 <div v-show="cameraActive && !faceDetectionLoading"
-                     class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <!-- Face oval guide - better centered -->
-                  <div class="w-40 h-48 border-4 border-green-400 border-dashed rounded-full opacity-80 flex items-center justify-center">
-                    <div class="text-green-400 text-xs font-medium bg-black bg-opacity-50 px-2 py-1 rounded">
-                      WAJAH
+                     class="absolute inset-0 pointer-events-none">
+                  <!-- Face oval guide - properly centered with custom CSS -->
+                  <div class="face-guide-container">
+                    <div class="face-guide-oval w-40 h-48 border-4 border-green-400 border-dashed rounded-full opacity-80 flex items-center justify-center relative">
+                      <!-- Face guide text -->
+                      <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-green-400 text-xs font-medium bg-black bg-opacity-70 px-3 py-1 rounded-full">
+                        POSISIKAN WAJAH
+                      </div>
+                      <!-- Corner guides for better alignment -->
+                      <div class="absolute top-4 left-4 w-3 h-3 border-l-2 border-t-2 border-green-400 opacity-60"></div>
+                      <div class="absolute top-4 right-4 w-3 h-3 border-r-2 border-t-2 border-green-400 opacity-60"></div>
+                      <div class="absolute bottom-4 left-4 w-3 h-3 border-l-2 border-b-2 border-green-400 opacity-60"></div>
+                      <div class="absolute bottom-4 right-4 w-3 h-3 border-r-2 border-b-2 border-green-400 opacity-60"></div>
+                      <!-- Center dot -->
+                      <div class="w-2 h-2 bg-green-400 rounded-full opacity-80"></div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Instructions overlay -->
                 <div v-show="cameraActive && !faceDetectionLoading"
-                     class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
-                  <p class="text-white text-sm text-center font-medium">
+                     class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3 text-center">
+                  <p class="text-white text-sm font-medium">
                     📸 Posisikan wajah di dalam oval hijau
                   </p>
-                  <p class="text-green-300 text-xs text-center mt-1">
+                  <p class="text-green-300 text-xs mt-1">
                     Pastikan wajah terlihat jelas dan menghadap kamera
                   </p>
                 </div>
@@ -672,24 +682,9 @@ const switchToFrontCamera = async () => {
     console.error('Error switching to front camera:', error)
     throw new Error('Gagal mengaktifkan kamera depan. Pastikan perangkat memiliki kamera depan.')
   }
-}// Switch back to environment camera for QR scanning
-const switchToBackCamera = async () => {
-  try {
-    console.log('🔄 Switching back to environment camera for QR scanning...')
-
-    // Stop current stream
-    if (videoElement.value && videoElement.value.srcObject) {
-      const tracks = videoElement.value.srcObject.getTracks()
-      tracks.forEach(track => track.stop())
-    }
-
-    // Use startCamera with 'environment' facingMode
-    await startCamera('environment')
-    console.log('✅ Back camera activated for QR scanning')
-  } catch (error) {
-    console.error('Error switching to back camera:', error)
-  }
 }
+
+// Auto-detect QR codes from camera feed
 
 const stopCamera = () => {
   if (videoElement.value?.srcObject) {
@@ -1257,5 +1252,27 @@ onUnmounted(() => {
 .modal-enter-from .relative,
 .modal-leave-to .relative {
   transform: scale(0.95) translateY(-20px);
+}
+
+/* Face guide centering styles */
+.face-guide-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.face-guide-oval {
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-opacity: 0.8;
+  }
+  50% {
+    border-opacity: 0.4;
+  }
 }
 </style>

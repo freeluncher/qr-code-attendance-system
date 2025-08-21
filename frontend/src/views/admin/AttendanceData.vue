@@ -586,7 +586,7 @@ const loadAttendanceData = async (page = 1) => {
       }
     })
 
-    const response = await api.get(`/attendance?${params}`)
+    const response = await api.get(`/attendances?${params}`)
     attendanceData.value = response.data.data
     pagination.value = response.data.pagination
   } catch (error) {
@@ -705,9 +705,9 @@ const submitForm = async () => {
   submitting.value = true
   try {
     if (showEditModal.value) {
-      await api.put(`/attendance/${form.value.id}`, form.value)
+      await api.put(`/attendances/${form.value.id}`, form.value)
     } else {
-      await api.post('/attendance', form.value)
+      await api.post('/attendances', form.value)
     }
     closeModal()
     await loadAttendanceData(pagination.value.current_page)
@@ -727,7 +727,7 @@ const confirmDelete = (attendance) => {
 const deleteAttendance = async () => {
   deleting.value = true
   try {
-    await api.delete(`/attendance/${attendanceToDelete.value.id}`)
+    await api.delete(`/attendances/${attendanceToDelete.value.id}`)
     showDeleteModal.value = false
     attendanceToDelete.value = null
     await loadAttendanceData(pagination.value.current_page)
@@ -749,7 +749,7 @@ const exportData = async () => {
       }
     })
 
-    const response = await api.get(`/attendance/export?${params}`, {
+    const response = await api.get(`/attendances/export?${params}`, {
       responseType: 'blob'
     })
 
@@ -792,7 +792,7 @@ const clearSelection = () => {
 const bulkDelete = async () => {
   if (confirm(`Hapus ${selectedItems.value.length} data presensi terpilih?`)) {
     try {
-      await api.delete('/attendance/bulk', {
+      await api.delete('/attendances/bulk', {
         data: { ids: selectedItems.value }
       })
       selectedItems.value = []

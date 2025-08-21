@@ -179,16 +179,36 @@ class SatpamController extends Controller
      */
     public function processQrAttendance(Request $request)
     {
-        $request->validate([
-            'qr_code' => 'required|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'face_photo' => 'nullable|string', // base64 image
-            'face_landmarks' => 'nullable|array',
-            'face_descriptor' => 'nullable|array',
-            'face_quality_status' => 'nullable|string',
-            'face_validation_message' => 'nullable|string'
+        // Debug log untuk melihat data yang diterima
+        \Log::info('QR Attendance Request Data:', [
+            'headers' => $request->headers->all(),
+            'all_data' => $request->all(),
+            'qr_code' => $request->qr_code,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'face_photo_length' => $request->face_photo ? strlen($request->face_photo) : 0,
+            'user_id' => Auth::id(),
+            'user_role' => Auth::user()?->role
         ]);
+
+        try {
+            $request->validate([
+                'qr_code' => 'required|string',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
+                'face_photo' => 'nullable|string', // base64 image
+                'face_landmarks' => 'nullable|array',
+                'face_descriptor' => 'nullable|array',
+                'face_quality_status' => 'nullable|string',
+                'face_validation_message' => 'nullable|string'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation Error in QR Attendance:', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            throw $e;
+        }
 
         $user = Auth::user();
         $today = Carbon::today();

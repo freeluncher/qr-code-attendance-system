@@ -28,6 +28,7 @@ class Attendance extends Model
         'check_out_latitude',
         'check_out_longitude',
         'distance',
+        'notes',
     ];
 
     protected $casts = [
