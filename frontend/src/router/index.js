@@ -107,6 +107,16 @@ const router = createRouter({
       }
     },
     {
+      path: '/admin/telegram',
+      name: 'admin-telegram',
+      component: () => import('../views/admin/TelegramNotifications.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresRole: 'admin',
+        title: 'Notifikasi Telegram - QR Attendance System'
+      }
+    },
+    {
       path: '/admin/reports',
       name: 'admin-reports',
       component: () => import('../views/admin/ReportsView.vue'),
