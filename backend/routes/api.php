@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
         Route::get('/activities', [DashboardController::class, 'recentActivities']);
         Route::get('/late-employees', [DashboardController::class, 'topLateEmployees']);
         Route::get('/attendance-chart', [DashboardController::class, 'attendanceChart']);
+        Route::get('/ai-predictions', [DashboardController::class, 'aiPredictions']);
+        Route::post('/ai-predictions/generate', [DashboardController::class, 'generateAIPredictions']);
     });
 
     // Weekly Reports

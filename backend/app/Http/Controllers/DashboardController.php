@@ -86,4 +86,47 @@ class DashboardController extends Controller
             'data' => $history
         ]);
     }
+
+    /**
+     * Get AI predictions for dashboard
+     */
+    public function aiPredictions(Request $request)
+    {
+        $limit = $request->input('limit', 6);
+        $predictions = $this->dashboardService->getAIPredictions($limit);
+
+        return response()->json([
+            'success' => true,
+            'data' => $predictions
+        ]);
+    }
+
+    /**
+     * Generate new AI predictions (admin only)
+     */
+    public function generateAIPredictions(Request $request)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+
+        try {
+            $count = $this->dashboardService->generateAIPredictions();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Generated {$count} AI predictions successfully",
+                'predictions_generated' => $count
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate AI predictions: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

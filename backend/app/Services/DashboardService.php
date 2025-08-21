@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Repositories\DashboardRepository;
+use App\Services\AIPredictionService;
 use Carbon\Carbon;
 
 class DashboardService
 {
     public function __construct(
-        private DashboardRepository $dashboardRepository
+        private DashboardRepository $dashboardRepository,
+        private AIPredictionService $aiPredictionService
     ) {}
 
     /**
@@ -203,5 +205,21 @@ class DashboardService
         }
 
         return $workingDays;
+    }
+
+    /**
+     * Get AI predictions for dashboard
+     */
+    public function getAIPredictions(int $limit = 6): array
+    {
+        return $this->aiPredictionService->getCurrentPredictions($limit)->toArray();
+    }
+
+    /**
+     * Generate new AI predictions
+     */
+    public function generateAIPredictions(): int
+    {
+        return $this->aiPredictionService->generatePredictions();
     }
 }

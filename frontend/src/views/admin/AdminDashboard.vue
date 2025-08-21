@@ -350,27 +350,90 @@
       </div>
 
       <!-- AI Predictions Section -->
-      <div class="mt-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between mb-4">
+      <div class="mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-6">
           <div>
-            <h3 class="text-base sm:text-lg font-medium">Prediksi AI - Berisiko Terlambat</h3>
-            <p class="text-purple-100 text-xs sm:text-sm">Berdasarkan analisis 7 hari terakhir</p>
+            <h3 class="text-lg sm:text-xl font-bold flex items-center">
+              <CpuChipIcon class="h-6 w-6 mr-2" />
+              Prediksi AI - Risiko Terlambat
+            </h3>
+            <p class="text-indigo-100 text-sm mt-1">Analisis machine learning berdasarkan pola 30 hari terakhir</p>
           </div>
-          <CpuChipIcon class="h-6 w-6 sm:h-8 sm:w-8 text-purple-200" />
+          <div class="flex items-center space-x-3">
+            <button
+              @click="generatePredictions"
+              :disabled="predictionsLoading"
+              class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
+            >
+              <CpuChipIcon class="h-4 w-4" />
+              <span>{{ predictionsLoading ? 'Generating...' : 'Generate' }}</span>
+            </button>
+            <div class="bg-white bg-opacity-20 rounded-full p-3">
+              <CpuChipIcon class="h-8 w-8 text-white" />
+            </div>
+          </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div v-for="(prediction, index) in aiPredictions" :key="index" class="bg-white bg-opacity-20 rounded-lg p-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-medium">{{ prediction.name }}</p>
-                <p class="text-sm text-purple-100">{{ prediction.location }}</p>
+
+        <!-- Predictions Cards -->
+        <div v-if="predictionsLoading" class="flex justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
+
+        <div v-else-if="aiPredictions.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="(prediction, index) in aiPredictions" :key="index"
+               class="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                  {{ prediction.name.split(' ')[1]?.charAt(0) || prediction.name.charAt(0) }}
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900 text-sm">{{ prediction.name }}</p>
+                  <p class="text-xs text-gray-500 flex items-center">
+                    <MapPinIcon class="h-3 w-3 mr-1" />
+                    {{ prediction.location }}
+                  </p>
+                </div>
               </div>
-              <div class="text-right">
-                <p class="font-semibold">{{ prediction.riskScore }}%</p>
-                <p class="text-xs text-purple-100">risiko</p>
+            </div>
+
+            <!-- Risk Score with Progress Bar -->
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-medium text-gray-700">Risk Score</span>
+                <span class="text-sm font-bold" :class="{
+                  'text-red-600': prediction.riskScore >= 80,
+                  'text-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
+                  'text-green-600': prediction.riskScore < 60
+                }">{{ prediction.riskScore }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="h-2 rounded-full transition-all duration-500"
+                     :class="{
+                       'bg-gradient-to-r from-red-400 to-red-600': prediction.riskScore >= 80,
+                       'bg-gradient-to-r from-yellow-400 to-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
+                       'bg-gradient-to-r from-green-400 to-green-600': prediction.riskScore < 60
+                     }"
+                     :style="{ width: `${prediction.riskScore}%` }">
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 text-center">
+                <span v-if="prediction.riskScore >= 80" class="text-red-600 font-medium">Risiko Tinggi</span>
+                <span v-else-if="prediction.riskScore >= 60" class="text-yellow-600 font-medium">Risiko Sedang</span>
+                <span v-else class="text-green-600 font-medium">Risiko Rendah</span>
+              </p>
+
+              <!-- Reason -->
+              <div v-if="prediction.reason" class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                <strong>Alasan:</strong> {{ prediction.reason }}
               </div>
             </div>
           </div>
+        </div>        <!-- Empty State -->
+        <div v-else class="text-center py-8">
+          <CpuChipIcon class="h-12 w-12 text-indigo-200 mx-auto mb-4" />
+          <p class="text-indigo-100">Belum ada data prediksi tersedia</p>
+          <p class="text-indigo-200 text-sm">Data akan muncul setelah sistem menganalisis pola kehadiran</p>
         </div>
       </div>
     </main>
@@ -410,6 +473,7 @@ const authStore = useAuthStore()
 
 // Reactive state
 const loading = ref(false)
+const predictionsLoading = ref(false)
 const chartPeriod = ref(7) // Default to 7 days
 
 // Stats data
@@ -431,12 +495,8 @@ const topLateEmployees = ref([])
 // Recent activities data
 const recentActivities = ref([])
 
-// AI Predictions data (mock for now)
-const aiPredictions = ref([
-  { name: 'Pak Slamet', location: 'Pos Barat', riskScore: 85 },
-  { name: 'Pak Joko', location: 'Pos Utara', riskScore: 72 },
-  { name: 'Pak Wawan', location: 'Pos Selatan', riskScore: 68 }
-])
+// AI Predictions data
+const aiPredictions = ref([])
 
 // Chart data
 const chartData = ref([])
@@ -467,6 +527,9 @@ const loadDashboardData = async () => {
     }))
     chartData.value = chartDataResult
 
+    // Load AI predictions
+    loadAIPredictions()
+
   } catch (error) {
     console.error('Error loading dashboard data:', error)
     // Fallback to default data on error
@@ -486,7 +549,40 @@ const loadDashboardData = async () => {
   }
 }
 
-// Change chart period and reload data
+// Load AI Predictions
+const loadAIPredictions = async () => {
+  predictionsLoading.value = true
+  try {
+    const predictions = await dashboardAPI.getAIPredictions(6)
+    aiPredictions.value = predictions
+    console.log('AI Predictions loaded:', predictions)
+  } catch (error) {
+    console.error('Error loading AI predictions:', error)
+    // Keep empty array on error
+    aiPredictions.value = []
+  } finally {
+    predictionsLoading.value = false
+  }
+}
+
+// Generate new AI predictions (admin action)
+const generatePredictions = async () => {
+  predictionsLoading.value = true
+  try {
+    const response = await dashboardAPI.generateAIPredictions()
+
+    // Show success message
+    console.log('Generated predictions:', response.message)
+
+    // Reload predictions after generation
+    await loadAIPredictions()
+
+  } catch (error) {
+    console.error('Error generating AI predictions:', error)
+  } finally {
+    predictionsLoading.value = false
+  }
+}// Change chart period and reload data
 const changeChartPeriod = async (days) => {
   chartPeriod.value = days
   loading.value = true

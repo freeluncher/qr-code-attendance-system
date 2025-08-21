@@ -48,6 +48,29 @@ export const dashboardAPI = {
     }
   },
 
+  // AI Predictions endpoints
+  async getAIPredictions(limit = 6) {
+    try {
+      const response = await api.get('/dashboard/ai-predictions', {
+        params: { limit }
+      })
+      return response.data || []
+    } catch (error) {
+      console.error('Error fetching AI predictions:', error)
+      return []
+    }
+  },
+
+  async generateAIPredictions() {
+    try {
+      const response = await api.post('/dashboard/ai-predictions/generate')
+      return response
+    } catch (error) {
+      console.error('Error generating AI predictions:', error)
+      throw error
+    }
+  },
+
   // Satpam dashboard endpoints
   async getSatpamStats() {
     try {
