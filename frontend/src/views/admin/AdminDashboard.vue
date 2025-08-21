@@ -337,6 +337,14 @@
               <ClipboardDocumentCheckIcon class="h-5 w-5 text-emerald-600 mr-3" />
               <span class="text-sm font-medium text-gray-900">Data Presensi</span>
             </router-link>
+
+            <router-link
+              to="/admin/telegram"
+              class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <ChatBubbleLeftRightIcon class="h-5 w-5 text-blue-500 mr-3" />
+              <span class="text-sm font-medium text-gray-900">Notifikasi Telegram</span>
+            </router-link>
           </div>
         </div>
       </div>
@@ -393,7 +401,8 @@ import {
   QrCodeIcon,
   DocumentTextIcon,
   ClipboardDocumentCheckIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
