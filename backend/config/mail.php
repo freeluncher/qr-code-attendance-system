@@ -3,6 +3,26 @@
 return [
 
     /*
+    |------------------------------------------------------------------------    /*
+    |--------------------------------------------------------------------------
+    | Global "From" Address
+    |--------------------------------------------------------------------------
+    |
+    | You may wish for all emails sent by your application to be sent from
+    | the same address. Here, you may specify a name and address that is
+    | used globally for all emails that are sent by your application.
+    |
+    */
+
+    'from' => [
+        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'name' => env('MAIL_FROM_NAME', 'Example'),
+    ],
+
+    // Admin email for weekly reports
+    'admin_email' => env('MAIL_ADMIN_EMAIL'),
+
+    /*
     |--------------------------------------------------------------------------
     | Default Mailer
     |--------------------------------------------------------------------------

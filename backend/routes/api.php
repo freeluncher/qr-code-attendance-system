@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SatpamController;
 use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\TelegramNotificationController;
+use App\Http\Controllers\Api\WeeklyReportController;
 
 // Authentication Routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -66,7 +67,19 @@ Route::middleware(['auth:sanctum', 'checkUserRole:admin'])->group(function () {
         Route::get('/attendance-chart', [DashboardController::class, 'attendanceChart']);
     });
 
-    // Telegram Management for Admin
+    // Weekly Reports
+    Route::prefix('weekly-reports')->group(function () {
+        Route::get('/', [WeeklyReportController::class, 'index']);
+        Route::post('/', [WeeklyReportController::class, 'store']);
+        Route::get('/locations', [WeeklyReportController::class, 'locations']);
+        Route::post('/preview', [WeeklyReportController::class, 'preview']);
+        Route::get('/{weeklyReport}', [WeeklyReportController::class, 'show']);
+        Route::get('/{weeklyReport}/download', [WeeklyReportController::class, 'download']);
+        Route::post('/{weeklyReport}/send-email', [WeeklyReportController::class, 'sendEmail']);
+        Route::delete('/{weeklyReport}', [WeeklyReportController::class, 'destroy']);
+    });
+
+    // Telegram Notifications (existing routes)
     Route::prefix('telegram')->group(function () {
         Route::get('/bot-info', [TelegramNotificationController::class, 'getBotInfo']);
         Route::post('/webhook', [TelegramNotificationController::class, 'setWebhook']);

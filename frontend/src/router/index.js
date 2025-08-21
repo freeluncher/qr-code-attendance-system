@@ -126,6 +126,16 @@ const router = createRouter({
         title: 'Laporan - QR Attendance System'
       }
     },
+    {
+      path: '/admin/weekly-reports',
+      name: 'admin-weekly-reports',
+      component: () => import('../views/WeeklyReports.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresRole: 'admin',
+        title: 'Laporan Mingguan - QR Attendance System'
+      }
+    },
     // Satpam Routes
     {
       path: '/satpam',

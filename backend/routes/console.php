@@ -27,3 +27,20 @@ Schedule::call(function () {
     // Send overall recap
     SendDailyRecapToTelegram::dispatch(now()->subDay(), null);
 })->dailyAt('06:30')->name('telegram-location-recaps');
+
+// Schedule Weekly Reports
+Schedule::command('reports:weekly --send-email')
+    ->weeklyOn(1, '07:00') // Every Monday at 7:00 AM
+    ->name('weekly-reports-auto')
+    ->description('Generate and send weekly attendance reports automatically');
+
+// Alternative: Generate reports for each location separately
+Schedule::call(function () {
+    $locations = \App\Models\Location::all(); // Remove is_active filter
+    foreach ($locations as $location) {
+        Artisan::call('reports:weekly', [
+            '--location' => $location->id,
+            '--send-email' => true,
+        ]);
+    }
+})->weeklyOn(1, '08:00')->name('weekly-reports-per-location');
