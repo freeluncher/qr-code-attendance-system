@@ -13,6 +13,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(UserCsvSeeder::class);
+        $this->call([
+            UserCsvSeeder::class,
+            LocationCsvSeeder::class,
+            ShiftCsvSeeder::class,
+            QrCodeCsvSeeder::class,
+            AttendanceCsvSeeder::class,
+            NotificationCsvSeeder::class,
+        ]);
     }
 }

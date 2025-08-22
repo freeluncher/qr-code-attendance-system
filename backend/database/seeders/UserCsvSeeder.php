@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Carbon\Carbon;
 
 class UserCsvSeeder extends Seeder
 {
@@ -14,54 +12,37 @@ class UserCsvSeeder extends Seeder
      */
     public function run(): void
     {
-        // Path to the CSV file
-        $csvPath = base_path('data-dummy-users.csv');
+        $csvFile = database_path('csv/users.csv');
 
-        if (!File::exists($csvPath)) {
-            $this->command->error("CSV file not found at: {$csvPath}");
+        if (!file_exists($csvFile)) {
+            $this->command->error("CSV file not found: {$csvFile}");
             return;
         }
 
         $this->command->info('Loading users from CSV...');
 
-        // Read CSV file
-        $csv = array_map('str_getcsv', file($csvPath));
-        $header = array_shift($csv); // Remove header row
+        $csvData = array_map('str_getcsv', file($csvFile));
+        $header = array_shift($csvData); // Remove header row
 
-        DB::beginTransaction();
+        foreach ($csvData as $row) {
+            $data = array_combine($header, $row);
 
-        try {
-            // Clear existing users (optional - remove if you want to keep existing data)
-            // DB::table('users')->truncate();
-
-            foreach ($csv as $row) {
-                // Combine header with row data
-                $data = array_combine($header, $row);
-
-                // Clean up data (remove quotes if any)
-                $userData = [
-                    'id' => (int) $data['id'],
-                    'name' => trim($data['name'], '"'),
-                    'email' => trim($data['email'], '"'),
-                    'username' => trim($data['username'], '"'),
-                    'password' => trim($data['password'], '"'), // Already hashed in CSV
-                    'role' => trim($data['role'], '"'),
-                    'photo' => trim($data['photo'], '"'),
-                    'email_verified_at' => Carbon::parse($data['email_verified_at']),
-                    'created_at' => Carbon::parse($data['created_at']),
-                    'updated_at' => Carbon::parse($data['updated_at']),
-                ];
-
-                DB::table('users')->insert($userData);
-            }
-
-            DB::commit();
-            $this->command->info('Successfully imported ' . count($csv) . ' users from CSV');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            $this->command->error('Error importing users: ' . $e->getMessage());
-            throw $e;
+            User::updateOrCreate(
+                ['email' => $data['email']], // Check by email
+                [
+                    'name' => $data['name'],
+                    'username' => $data['username'],
+                    'password' => $data['password'], // Already hashed in CSV
+                    'role' => $data['role'],
+                    'photo' => $data['photo'] ?: null,
+                    'telegram_chat_id' => $data['telegram_chat_id'] ?: null,
+                    'telegram_username' => $data['telegram_username'] ?: null,
+                    'telegram_notifications_enabled' => (bool) $data['telegram_notifications_enabled'],
+                    'email_verified_at' => now(),
+                ]
+            );
         }
+
+        $this->command->info('Successfully seeded ' . count($csvData) . ' users from CSV.');
     }
 }
