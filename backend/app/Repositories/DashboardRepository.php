@@ -40,7 +40,39 @@ class DashboardRepository
      */
     public function getTodayAttendances()
     {
-        return Attendance::whereDate('created_at', Carbon::today())->get();
+        return Attendance::whereDate('scanned_at', Carbon::today())->get();
+    }
+
+    /**
+     * Get count of unique users who attended today
+     */
+    public function getTodayUniqueAttendeesCount(): int
+    {
+        return Attendance::whereDate('scanned_at', Carbon::today())
+            ->distinct('user_id')
+            ->count('user_id');
+    }
+
+    /**
+     * Get count of unique users who were late today
+     */
+    public function getTodayUniqueLateCount(): int
+    {
+        return Attendance::whereDate('scanned_at', Carbon::today())
+            ->where('status', 'late')
+            ->distinct('user_id')
+            ->count('user_id');
+    }
+
+    /**
+     * Get count of unique users who were on time today
+     */
+    public function getTodayUniqueOnTimeCount(): int
+    {
+        return Attendance::whereDate('scanned_at', Carbon::today())
+            ->where('status', 'on_time')
+            ->distinct('user_id')
+            ->count('user_id');
     }
 
     /**
@@ -48,10 +80,10 @@ class DashboardRepository
      */
     public function getAttendancesByDateRange(Carbon $startDate, ?Carbon $endDate = null)
     {
-        $query = Attendance::where('created_at', '>=', $startDate);
+        $query = Attendance::where('scanned_at', '>=', $startDate);
 
         if ($endDate) {
-            $query->where('created_at', '<=', $endDate);
+            $query->where('scanned_at', '<=', $endDate);
         }
 
         return $query->get();
@@ -62,10 +94,10 @@ class DashboardRepository
      */
     public function getAttendanceCountByDateRange(Carbon $startDate, ?Carbon $endDate = null): int
     {
-        $query = Attendance::where('created_at', '>=', $startDate);
+        $query = Attendance::where('scanned_at', '>=', $startDate);
 
         if ($endDate) {
-            $query->where('created_at', '<=', $endDate);
+            $query->where('scanned_at', '<=', $endDate);
         }
 
         return $query->count();
@@ -77,7 +109,7 @@ class DashboardRepository
     public function getRecentActivities(int $limit = 10)
     {
         return Attendance::with(['user', 'location'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('scanned_at', 'desc')
             ->limit($limit)
             ->get();
     }
@@ -96,8 +128,8 @@ class DashboardRepository
             )
             ->join('users', 'attendances.user_id', '=', 'users.id')
             ->join('locations', 'attendances.location_id', '=', 'locations.id')
-            ->where('attendances.created_at', '>=', $startDate)
-            ->where('attendances.late_category', '!=', 'tepat_waktu')
+            ->where('attendances.scanned_at', '>=', $startDate)
+            ->where('attendances.status', 'late')
             ->where('users.role', 'satpam')
             ->groupBy('users.id', 'users.name')
             ->orderBy('late_count', 'desc')
@@ -110,7 +142,7 @@ class DashboardRepository
      */
     public function getAttendancesByDate(Carbon $date)
     {
-        return Attendance::whereDate('created_at', $date->toDateString())->get();
+        return Attendance::whereDate('scanned_at', $date->toDateString())->get();
     }
 
     /**
@@ -119,7 +151,7 @@ class DashboardRepository
     public function getUserTodayAttendance(int $userId)
     {
         return Attendance::where('user_id', $userId)
-            ->whereDate('created_at', Carbon::today())
+            ->whereDate('scanned_at', Carbon::today())
             ->first();
     }
 
@@ -129,7 +161,7 @@ class DashboardRepository
     public function getUserMonthlyAttendances(int $userId, Carbon $startOfMonth)
     {
         return Attendance::where('user_id', $userId)
-            ->where('created_at', '>=', $startOfMonth)
+            ->where('scanned_at', '>=', $startOfMonth)
             ->get();
     }
 
@@ -140,7 +172,7 @@ class DashboardRepository
     {
         return Attendance::with(['location'])
             ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('scanned_at', 'desc')
             ->limit($limit)
             ->get();
     }

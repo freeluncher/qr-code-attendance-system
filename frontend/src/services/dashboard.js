@@ -54,6 +54,7 @@ export const dashboardAPI = {
       const response = await api.get('/dashboard/ai-predictions', {
         params: { limit }
       })
+      console.log('AI Predictions API response:', response)
       return response.data || []
     } catch (error) {
       console.error('Error fetching AI predictions:', error)
@@ -64,6 +65,7 @@ export const dashboardAPI = {
   async generateAIPredictions() {
     try {
       const response = await api.post('/dashboard/ai-predictions/generate')
+      console.log('Generate AI Predictions response:', response)
       return response
     } catch (error) {
       console.error('Error generating AI predictions:', error)

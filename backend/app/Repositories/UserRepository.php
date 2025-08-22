@@ -6,9 +6,16 @@ use App\Models\User;
 class UserRepository{
 
     // Ambil data user menggunakan pagination
-    public function getAllUsers($perPage = 10)
+    public function getAllUsers($perPage = 10, $role = null)
     {
-        return User::paginate($perPage);
+        $query = User::query();
+
+        // Filter by role if provided
+        if (!is_null($role)) {
+            $query->where('role', $role);
+        }
+
+        return $query->paginate($perPage);
     }
 
     // Ambil data satu user berdasarkan ID

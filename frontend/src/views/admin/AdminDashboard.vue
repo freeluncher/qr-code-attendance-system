@@ -355,9 +355,15 @@
           <div>
             <h3 class="text-lg sm:text-xl font-bold flex items-center">
               <CpuChipIcon class="h-6 w-6 mr-2" />
-              Prediksi AI - Risiko Terlambat
+              Prediksi AI - Risiko Terlambat Minggu Depan
             </h3>
-            <p class="text-indigo-100 text-sm mt-1">Analisis machine learning berdasarkan pola 30 hari terakhir</p>
+            <p class="text-indigo-100 text-sm mt-1">Analisis berdasarkan pola kehadiran 7 hari terakhir - Top Satpam Berisiko</p>
+            <p v-if="aiPredictions.length > 0" class="text-indigo-200 text-xs mt-1">
+              Menampilkan {{ aiPredictions.length }} prediksi berisiko tinggi dari data terkini
+            </p>
+            <p v-if="aiPredictions.length > 0 && aiPredictions.length < 3" class="text-yellow-200 text-xs mt-1">
+              ⚠️ Hanya {{ aiPredictions.length }} satpam dengan risiko di atas 10% - kondisi kehadiran relatif baik
+            </p>
           </div>
           <div class="flex items-center space-x-3">
             <button
@@ -379,61 +385,110 @@
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         </div>
 
-        <div v-else-if="aiPredictions.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="(prediction, index) in aiPredictions" :key="index"
-               class="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center">
-                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
-                  {{ prediction.name.split(' ')[1]?.charAt(0) || prediction.name.charAt(0) }}
+        <div v-else-if="aiPredictions.length > 0" class="space-y-4">
+          <!-- Predictions Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div v-for="(prediction, index) in aiPredictions" :key="index"
+                 class="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                    {{ prediction.name.split(' ')[1]?.charAt(0) || prediction.name.charAt(0) }}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">{{ prediction.name }}</p>
+                    <p class="text-xs text-gray-500 flex items-center">
+                      <MapPinIcon class="h-3 w-3 mr-1" />
+                      {{ prediction.location }}
+                    </p>
+                    <p v-if="prediction.predicted_for_week" class="text-xs text-blue-600 font-medium mt-1">
+                      {{ prediction.predicted_for_week }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p class="font-semibold text-gray-900 text-sm">{{ prediction.name }}</p>
-                  <p class="text-xs text-gray-500 flex items-center">
-                    <MapPinIcon class="h-3 w-3 mr-1" />
-                    {{ prediction.location }}
-                  </p>
+              </div>
+
+              <!-- Risk Score with Progress Bar -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-medium text-gray-700">Risk Score</span>
+                  <span class="text-sm font-bold" :class="{
+                    'text-red-600': prediction.riskScore >= 80,
+                    'text-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
+                    'text-green-600': prediction.riskScore < 60
+                  }">{{ prediction.riskScore }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="h-2 rounded-full transition-all duration-500"
+                       :class="{
+                         'bg-gradient-to-r from-red-400 to-red-600': prediction.riskScore >= 80,
+                         'bg-gradient-to-r from-yellow-400 to-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
+                         'bg-gradient-to-r from-green-400 to-green-600': prediction.riskScore < 60
+                       }"
+                       :style="{ width: `${prediction.riskScore}%` }">
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 text-center">
+                  <span v-if="prediction.riskScore >= 80" class="text-red-600 font-medium">Risiko Tinggi</span>
+                  <span v-else-if="prediction.riskScore >= 60" class="text-yellow-600 font-medium">Risiko Sedang</span>
+                  <span v-else class="text-green-600 font-medium">Risiko Rendah</span>
+                </p>
+
+                <!-- Reason -->
+                <div v-if="prediction.reason" class="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <p class="text-xs text-gray-700 font-medium mb-1">Alasan Prediksi:</p>
+                  <p class="text-xs text-gray-600">{{ prediction.reason }}</p>
+                </div>
+
+                <!-- Action Badge -->
+                <div class="mt-3 flex justify-center">
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                        :class="{
+                          'bg-red-100 text-red-800': prediction.riskScore >= 80,
+                          'bg-yellow-100 text-yellow-800': prediction.riskScore >= 60 && prediction.riskScore < 80,
+                          'bg-green-100 text-green-800': prediction.riskScore < 60
+                        }">
+                    <span v-if="prediction.riskScore >= 80">⚠️ Perlu Perhatian Khusus</span>
+                    <span v-else-if="prediction.riskScore >= 60">⚡ Pantau Lebih Ketat</span>
+                    <span v-else>✅ Kondisi Terkontrol</span>
+                  </span>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Risk Score with Progress Bar -->
-            <div class="space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-xs font-medium text-gray-700">Risk Score</span>
-                <span class="text-sm font-bold" :class="{
-                  'text-red-600': prediction.riskScore >= 80,
-                  'text-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
-                  'text-green-600': prediction.riskScore < 60
-                }">{{ prediction.riskScore }}%</span>
+          <!-- AI Summary Info -->
+          <div class="mt-6 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 border border-white border-opacity-20">
+            <h4 class="text-sm font-semibold text-gray-800 mb-2">📊 Ringkasan Analisis AI</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-700 mb-3">
+              <div>
+                <span class="font-medium text-gray-800">🎯 Model:</span> Weekly Risk Assessment
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="h-2 rounded-full transition-all duration-500"
-                     :class="{
-                       'bg-gradient-to-r from-red-400 to-red-600': prediction.riskScore >= 80,
-                       'bg-gradient-to-r from-yellow-400 to-yellow-600': prediction.riskScore >= 60 && prediction.riskScore < 80,
-                       'bg-gradient-to-r from-green-400 to-green-600': prediction.riskScore < 60
-                     }"
-                     :style="{ width: `${prediction.riskScore}%` }">
-                </div>
+              <div>
+                <span class="font-medium text-gray-800">📅 Periode:</span> Prediksi 7 hari ke depan
               </div>
-              <p class="text-xs text-gray-500 text-center">
-                <span v-if="prediction.riskScore >= 80" class="text-red-600 font-medium">Risiko Tinggi</span>
-                <span v-else-if="prediction.riskScore >= 60" class="text-yellow-600 font-medium">Risiko Sedang</span>
-                <span v-else class="text-green-600 font-medium">Risiko Rendah</span>
-              </p>
+              <div>
+                <span class="font-medium text-gray-800">🔍 Data:</span> Analisis pola 7 hari terakhir
+              </div>
+            </div>
 
-              <!-- Reason -->
-              <div v-if="prediction.reason" class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                <strong>Alasan:</strong> {{ prediction.reason }}
+            <!-- Special message for few predictions -->
+            <div v-if="aiPredictions.length < 3 && aiPredictions.length > 0" class="bg-green-600 bg-opacity-90 rounded-lg p-3 mt-3">
+              <div class="flex items-center">
+                <svg class="h-5 w-5 text-white mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-white text-xs font-medium">
+                  ✅ Kabar Baik! Hanya {{ aiPredictions.length }} dari 7 satpam yang berisiko tinggi. Tingkat kehadiran secara keseluruhan dalam kondisi baik.
+                </p>
               </div>
             </div>
           </div>
         </div>        <!-- Empty State -->
         <div v-else class="text-center py-8">
           <CpuChipIcon class="h-12 w-12 text-indigo-200 mx-auto mb-4" />
-          <p class="text-indigo-100">Belum ada data prediksi tersedia</p>
-          <p class="text-indigo-200 text-sm">Data akan muncul setelah sistem menganalisis pola kehadiran</p>
+          <p class="text-indigo-100">Belum ada prediksi AI tersedia</p>
+          <p class="text-indigo-200 text-sm">Klik tombol "Generate" untuk membuat prediksi berdasarkan data 7 hari terakhir</p>
         </div>
       </div>
     </main>
@@ -553,9 +608,24 @@ const loadDashboardData = async () => {
 const loadAIPredictions = async () => {
   predictionsLoading.value = true
   try {
+    console.log('Loading AI predictions...')
     const predictions = await dashboardAPI.getAIPredictions(6)
-    aiPredictions.value = predictions
-    console.log('AI Predictions loaded:', predictions)
+    console.log('Raw predictions response:', predictions)
+
+    // Convert object to array if needed
+    let predictionsArray = []
+    if (predictions && typeof predictions === 'object') {
+      if (Array.isArray(predictions)) {
+        predictionsArray = predictions
+      } else {
+        // Convert object with numeric keys to array
+        predictionsArray = Object.values(predictions)
+      }
+    }
+
+    aiPredictions.value = predictionsArray
+    console.log('AI Predictions loaded:', aiPredictions.value)
+    console.log('Predictions count:', aiPredictions.value.length)
   } catch (error) {
     console.error('Error loading AI predictions:', error)
     // Keep empty array on error
@@ -573,6 +643,9 @@ const generatePredictions = async () => {
 
     // Show success message
     console.log('Generated predictions:', response.message)
+
+    // You could add a toast notification here if available
+    alert(`✅ ${response.message || 'AI Predictions generated successfully!'}`)
 
     // Reload predictions after generation
     await loadAIPredictions()

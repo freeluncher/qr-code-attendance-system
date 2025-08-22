@@ -17,9 +17,9 @@ class UserService
     }
 
    // Proses Ambil data user dengan pagination
-   public function getAllUsers($perPage = 10)
+   public function getAllUsers($perPage = 10, $role = null)
    {
-       return $this->userRepository->getAllUsers($perPage);
+       return $this->userRepository->getAllUsers($perPage, $role);
    }
 
    // Proses Ambil satu data user by id

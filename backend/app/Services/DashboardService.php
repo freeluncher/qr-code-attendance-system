@@ -30,8 +30,11 @@ class DashboardService
         // Today's attendance statistics
         $todayAttendances = $this->dashboardRepository->getTodayAttendances();
         $todayAttendanceCount = $todayAttendances->count();
-        $todayLateCount = $todayAttendances->where('late_category', '!=', 'tepat_waktu')->count();
-        $todayOnTimeCount = $todayAttendances->where('late_category', 'tepat_waktu')->count();
+
+        // Count unique users who attended today (for correct attendance rate)
+        $todayUniqueAttendees = $this->dashboardRepository->getTodayUniqueAttendeesCount();
+        $todayUniqueLateCount = $this->dashboardRepository->getTodayUniqueLateCount();
+        $todayUniqueOnTimeCount = $this->dashboardRepository->getTodayUniqueOnTimeCount();
 
         // This week and month statistics
         $weekAttendances = $this->dashboardRepository->getAttendanceCountByDateRange($thisWeek);
@@ -46,10 +49,10 @@ class DashboardService
             'total_locations' => $totalLocations,
             'total_qr_codes' => $totalQrCodes,
             'today' => [
-                'total_attendance' => $todayAttendanceCount,
-                'late_count' => $todayLateCount,
-                'on_time_count' => $todayOnTimeCount,
-                'attendance_rate' => $totalSatpam > 0 ? round(($todayAttendanceCount / $totalSatpam) * 100, 1) : 0,
+                'total_attendance' => $todayUniqueAttendees, // Show unique attendees, not total records
+                'late_count' => $todayUniqueLateCount,
+                'on_time_count' => $todayUniqueOnTimeCount,
+                'attendance_rate' => $totalSatpam > 0 ? round(($todayUniqueAttendees / $totalSatpam) * 100, 1) : 0,
             ],
             'this_week' => [
                 'total_attendance' => $weekAttendances,
@@ -75,9 +78,9 @@ class DashboardService
                 'user_name' => $attendance->user->name,
                 'action' => 'melakukan presensi',
                 'location_name' => $attendance->location->name,
-                'status' => $attendance->late_category,
-                'created_at' => $attendance->created_at,
-                'formatted_time' => $attendance->created_at->diffForHumans(),
+                'status' => $attendance->status,
+                'created_at' => $attendance->scanned_at,
+                'formatted_time' => $attendance->scanned_at->diffForHumans(),
             ];
         })->toArray();
     }
@@ -112,8 +115,8 @@ class DashboardService
             $dayAttendances = $this->dashboardRepository->getAttendancesByDate($date);
 
             $total = $dayAttendances->count();
-            $onTime = $dayAttendances->where('late_category', 'tepat_waktu')->count();
-            $late = $total - $onTime;
+            $onTime = $dayAttendances->where('status', 'on_time')->count();
+            $late = $dayAttendances->where('status', 'late')->count();
 
             $chartData->push([
                 'date' => $date->format('Y-m-d'),
@@ -143,8 +146,8 @@ class DashboardService
         // This month's attendance
         $monthAttendances = $this->dashboardRepository->getUserMonthlyAttendances($userId, $thisMonth);
         $monthTotal = $monthAttendances->count();
-        $monthOnTime = $monthAttendances->where('late_category', 'tepat_waktu')->count();
-        $monthLate = $monthTotal - $monthOnTime;
+        $monthOnTime = $monthAttendances->where('status', 'on_time')->count();
+        $monthLate = $monthAttendances->where('status', 'late')->count();
 
         // Expected working days this month
         $workingDays = $this->getWorkingDaysInMonth();
@@ -152,7 +155,7 @@ class DashboardService
         return [
             'today' => [
                 'has_attendance' => $todayAttendance ? true : false,
-                'status' => $todayAttendance ? $todayAttendance->late_category : null,
+                'status' => $todayAttendance ? $todayAttendance->status : null,
                 'scanned_at' => $todayAttendance ? $todayAttendance->scanned_at : null,
                 'location' => $todayAttendance ? $todayAttendance->location->name : null,
             ],
@@ -177,12 +180,12 @@ class DashboardService
         return $history->map(function ($attendance) {
             return [
                 'id' => $attendance->id,
-                'date' => $attendance->created_at->format('Y-m-d'),
-                'formatted_date' => $attendance->created_at->format('l, d F Y'),
+                'date' => $attendance->scanned_at->format('Y-m-d'),
+                'formatted_date' => $attendance->scanned_at->format('l, d F Y'),
                 'location' => $attendance->location->name,
                 'scanned_at' => $attendance->scanned_at->format('H:i'),
-                'status' => $attendance->late_category,
-                'status_label' => $attendance->late_category === 'tepat_waktu' ? 'Tepat Waktu' : 'Terlambat',
+                'status' => $attendance->status,
+                'status_label' => $attendance->status === 'on_time' ? 'Tepat Waktu' : 'Terlambat',
                 'photo_url' => $attendance->photo_url ? asset($attendance->photo_url) : null,
             ];
         })->toArray();
