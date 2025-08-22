@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use App\Repositories\DashboardRepository;
 use App\Services\DashboardService;
+use App\Services\AIPredictionService;
 use App\Services\GeocodingService;
 use App\Services\TelegramService;
 use App\Events\AttendanceRecorded;
@@ -21,7 +22,10 @@ class AppServiceProvider extends ServiceProvider
         // Register Dashboard Repository and Service
         $this->app->bind(DashboardRepository::class, DashboardRepository::class);
         $this->app->bind(DashboardService::class, function ($app) {
-            return new DashboardService($app->make(DashboardRepository::class));
+            return new DashboardService(
+                $app->make(DashboardRepository::class),
+                $app->make(AIPredictionService::class)
+            );
         });
 
         // Register Geocoding Service

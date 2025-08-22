@@ -18,7 +18,9 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 10);
-        $users = $this->userService->getAllUsers($perPage);
+        $role = $request->input('role'); // Filter by role if provided
+
+        $users = $this->userService->getAllUsers($perPage, $role);
         return response()->json($users);
     }
 
