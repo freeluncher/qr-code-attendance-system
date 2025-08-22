@@ -1,0 +1,11 @@
+user_id,location_id,predicted_for_date,risk_score,reason
+2,1,2025-08-23,0.15,"Riwayat kehadiran baik, tidak ada pola keterlambatan signifikan"
+3,1,2025-08-23,0.75,"Sering terlambat dalam 2 minggu terakhir, pola keterlambatan konsisten"
+4,2,2025-08-23,0.25,"Kehadiran stabil, sesekali terlambat karena faktor eksternal"
+5,2,2025-08-23,0.85,"Riwayat keterlambatan tinggi, perlu perhatian khusus"
+6,3,2025-08-23,0.10,"Karyawan teladan, selalu tepat waktu"
+7,3,2025-08-23,0.30,"Kehadiran baik dengan sedikit fluktuasi"
+8,4,2025-08-23,0.60,"Keterlambatan sporadis, perlu monitoring"
+2,5,2025-08-23,0.20,"Performa baik di lokasi berbeda"
+3,6,2025-08-23,0.90,"Risiko tinggi keterlambatan berdasarkan pola historis"
+4,7,2025-08-23,0.12,"Konsisten tepat waktu di semua lokasi"

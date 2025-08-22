@@ -1,0 +1,6 @@
+name,start_time,end_time
+Shift Pagi,07:00:00,15:00:00
+Shift Siang,15:00:00,23:00:00
+Shift Malam,23:00:00,07:00:00
+Shift Normal,08:00:00,17:00:00
+Shift Weekend,09:00:00,16:00:00

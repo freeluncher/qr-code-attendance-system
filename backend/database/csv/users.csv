@@ -1,0 +1,9 @@
+name,email,username,password,role,photo,telegram_chat_id,telegram_username,telegram_notifications_enabled
+Admin User,admin@admin.com,admin,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,admin,/images/admin.jpg,123456789,admin_user,1
+John Doe,john@satpam.com,john_doe,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/john.jpg,987654321,john_satpam,1
+Jane Smith,jane@satpam.com,jane_smith,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/jane.jpg,456789123,jane_satpam,1
+Michael Johnson,michael@satpam.com,michael_johnson,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/michael.jpg,789123456,michael_satpam,1
+Sarah Wilson,sarah@satpam.com,sarah_wilson,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/sarah.jpg,321654987,sarah_satpam,1
+David Brown,david@satpam.com,david_brown,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/david.jpg,654987321,david_satpam,1
+Lisa Garcia,lisa@satpam.com,lisa_garcia,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/lisa.jpg,147258369,lisa_satpam,1
+Robert Martinez,robert@satpam.com,robert_martinez,$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi,satpam,/images/robert.jpg,258369147,robert_satpam,1
