@@ -780,10 +780,20 @@ const processQRCode = async (qrData = null) => {
 
   processing.value = true
 
-  // Handle event object passed accidentally
+/* ==========================================================
+Kode ini untuk menangani kasus di mana fungsi processQrCode()
+dipanggil sebagai event handler dari elemen input atau button
+karena objek event memiliki properti target, sedangkan data QRcode
+yang valid seharusnya berupa string.
+Kode ini memeriksa apakah argumen qrData adalah objek dan punya
+properti target, jika iya, berarti itu adalah event object, bukan
+data QR code. Maka, variabel qrCode di-set ke null agar proses
+selanjutnya menggunakan input manual (manualQrCode.value)
+sebagai data QR code.
+==================================================================== */
   let qrCode = qrData
   if (qrData && typeof qrData === 'object' && qrData.target !== undefined) {
-    // This is an event object, ignore it and use manual input
+    // Ini adalah objek event, abaikan dan gunakan input manual
     qrCode = null
   }
 
@@ -795,7 +805,7 @@ const processQRCode = async (qrData = null) => {
     return
   }
 
-  // If qrCode is a JSON string, parse it to get the actual code
+  // Jika qrCode adalah JSON string, parsing untuk mendapatkan kode yang valid
   try {
     if (typeof qrCode === 'string' && (qrCode.startsWith('{') || qrCode.includes('code'))) {
       const parsedData = JSON.parse(qrCode)
@@ -804,11 +814,11 @@ const processQRCode = async (qrData = null) => {
       }
     }
   } catch {
-    // If parsing fails, use the original qrCode value
+    // Jika parsing gagal, gunakan nilai qrCode yang asli
     console.log('QR Code is not JSON, using as string:', qrCode)
   }
 
-  // Ensure qrCode is a string and not an object representation
+  // Memastikan qrCode adalah string dan bukan representasi objek
   if (typeof qrCode !== 'string' || qrCode.includes('[object')) {
     showError('QR Code Tidak Valid', 'Format QR code tidak valid. Mohon coba lagi.')
     processing.value = false
@@ -817,10 +827,10 @@ const processQRCode = async (qrData = null) => {
 
   console.log('Processing QR Code:', qrCode)
 
-  // Store QR code for face capture step
+  // Simpan QR code untuk face capture step
   qrCodeData.value = qrCode
 
-  // Start face capture process
+  // Mulai proses face capture
   await captureFacePhoto()
 }
 
@@ -828,13 +838,14 @@ const processQRCode = async (qrData = null) => {
 const captureFacePhoto = async () => {
   try {
     showFaceCapture.value = true
-    faceDetectionLoading.value = false // Start with loading false to show camera preview first
+    // Mulai dengan loading false untuk menampilkan pratinjau kamera terlebih dahulu
+    faceDetectionLoading.value = false
 
-    // Switch to front camera for face capture
-    console.log('🔄 Switching to front camera for face verification...')
+    // Beralih ke kamera depan untuk verifikasi wajah
+    console.log('🔄 Beralih ke kamera depan untuk verifikasi wajah...')
     await switchToFrontCamera()
 
-    // Setup face video preview with front camera stream
+    // Setup face video preview dengan front camera stream
     await new Promise(resolve => setTimeout(resolve, 300)) // Wait for modal and camera to be ready
 
     if (faceVideoPreview.value && videoElement.value && videoElement.value.srcObject) {
@@ -848,7 +859,7 @@ const captureFacePhoto = async () => {
     // Load face detection models first
     console.log('📋 Loading face detection models...')
     await faceDetection.loadModels()
-    console.log('✅ Models loaded successfully')
+    console.log('✅ Models berhasil dimuat')
 
     // Debug camera state
     console.log('🔍 Debug camera state:')
@@ -859,7 +870,7 @@ const captureFacePhoto = async () => {
     console.log('- videoElement videoWidth:', videoElement.value?.videoWidth)
     console.log('- videoElement videoHeight:', videoElement.value?.videoHeight)
 
-    // Check if camera is active and video element is ready
+    // Cek apakah kamera aktif dan elemen video siap
     if (!cameraActive.value) {
       throw new Error('Camera tidak aktif. Status: ' + cameraActive.value)
     }
@@ -876,35 +887,35 @@ const captureFacePhoto = async () => {
     console.log('Video element readyState:', videoElement.value.readyState)
     console.log('Camera active:', cameraActive.value)
 
-    // Give user time to position face (show preview for 3 seconds)
-    console.log('👤 Showing face positioning preview...')
+    // Memberikan waktu kepada pengguna untuk memposisikan wajah (menampilkan pratinjau selama 3 detik)
+    console.log('👤 Menampilkan pratinjau pemposisian wajah...')
     await new Promise(resolve => setTimeout(resolve, 3000))
 
-    // Now start face detection process
+    // Sekarang mulai proses deteksi wajah
     faceDetectionLoading.value = true
-    console.log('📸 Capturing face photo from video...')
+    console.log('📸 Mengambil foto wajah dari video...')
 
-    // Add delay to ensure video frame is stable
+    // Tambahkan delay untuk memastikan frame video stabil
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // Capture photo from video
+    // Capture photo dari video
     const captureResult = await faceDetection.captureImageFromVideo(videoElement.value)
     facePhoto.value = captureResult.dataUrl
 
-    console.log('✅ Photo captured successfully')
+    console.log('✅ Photo berhasil diambil')
 
-    // Create temporary image element for face detection
+    // Buat elemen gambar sementara untuk deteksi wajah
     const img = new Image()
 
     img.onload = async () => {
       try {
-        console.log('🔍 Starting face detection on captured image...')
+        console.log('🔍 Memulai deteksi wajah pada gambar yang diambil...')
 
-        // Detect face and landmarks
+        // Deteksi face and landmarks
         const detection = await faceDetection.detectFaceWithLandmarks(img)
         console.log('Face detection result:', detection)
 
-        // Validate face quality
+        // Validasi face quality
         const validation = faceDetection.validateFaceQuality(detection)
         console.log('Face validation result:', validation)
 
@@ -914,14 +925,14 @@ const captureFacePhoto = async () => {
           faceDetectionLoading.value = false
           processing.value = false
 
-          // Stop camera on validation error
+          // Stop kamera ketika validasi error
           if (cameraActive.value) {
             stopCamera()
           }
           return
         }
 
-        // Store face data
+        // Simpan face data
         faceData.value = {
           landmarks: detection.landmarks.positions,
           descriptor: Array.from(detection.descriptor),
@@ -929,10 +940,10 @@ const captureFacePhoto = async () => {
           message: validation.message
         }
 
-        console.log('✅ Face data stored, proceeding to attendance...')
+        console.log('✅ Data wajah disimpan, melanjutkan ke proses presensi...')
         faceDetectionLoading.value = false
 
-        // Proceed with attendance
+        // Proses presensi
         await processAttendance()
       } catch (faceError) {
         console.error('Face detection error:', faceError)
@@ -941,7 +952,7 @@ const captureFacePhoto = async () => {
         faceDetectionLoading.value = false
         processing.value = false
 
-        // Stop camera on face detection error
+        // Stop kamera ketika face detection error
         if (cameraActive.value) {
           stopCamera()
         }
@@ -955,14 +966,14 @@ const captureFacePhoto = async () => {
       faceDetectionLoading.value = false
       processing.value = false
 
-      // Stop camera on image load error
+      // Stop kamera ketika image load error
       if (cameraActive.value) {
         stopCamera()
       }
     }
 
-    // Set image source with error handling
-    console.log('🖼️ Loading captured image for processing...')
+    // Set sumber gambar dengan error handling
+    console.log('🖼️ Memuat gambar yang diambil untuk pemrosesan...')
     img.crossOrigin = 'anonymous'
     img.src = captureResult.dataUrl
 
@@ -973,25 +984,25 @@ const captureFacePhoto = async () => {
     faceDetectionLoading.value = false
     processing.value = false
 
-    // Stop camera on face capture error
+    // Stop kamera ketika face capture error
     if (cameraActive.value) {
       stopCamera()
     }
   }
 }
 
-// Process attendance with face data
+// Proses presensi dengan face data
 const processAttendance = async () => {
   try {
-    // Get current location
+    // Dapatkan lokasi saat ini
     let location = null
     try {
       location = await satpamAPI.getCurrentLocation()
     } catch (locationError) {
-      console.warn('Could not get location:', locationError)
+      console.warn('Tidak dapat menentukan lokasi:', locationError)
     }
 
-    // Process QR attendance with face data
+    // Proses QR attendance dengan face data
     const result = await satpamAPI.processQrAttendance(
       qrCodeData.value,
       location?.latitude,
@@ -1025,7 +1036,7 @@ const processAttendance = async () => {
       // Clear manual input
       manualQrCode.value = ''
 
-      // Stop camera after successful scan
+      // Stop kamera setelah scan sukses
       if (cameraActive.value) {
         stopCamera()
       }

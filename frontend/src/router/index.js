@@ -9,7 +9,7 @@ const router = createRouter({
     {
       path: '/',
       redirect: () => {
-        // Redirect based on user role after authentication check
+        // redirect berdasarkan role user
         const authStore = useAuthStore()
         if (authStore.user?.role === 'admin') {
           return '/admin/dashboard'

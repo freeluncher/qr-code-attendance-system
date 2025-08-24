@@ -90,3 +90,5 @@ docs/
 
 # Temporary files
 tmp/
+/vuepress-starter/
+/vuepress-starter/*
